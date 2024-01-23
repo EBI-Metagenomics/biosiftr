@@ -9,20 +9,24 @@
 
 ## Introduction
 
-**ebi-metagenomics/shallowmapping** is a bioinformatics pipeline that ...
+**ebi-metagenomics/shallowmapping** is a bioinformatics pipeline that generates functional profiles for shallow shotgun using low-yield (shallow shotgun: < 10 M reads) short raw-reads mapping versus a database of MGnify biome-specific genome catalogues.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+The input is a csv file having the following columns: sample name, location of the read 1 fastq file (file_1.fq.gz), location of the read 2 fastq file (file_2.fq.gz).
+
+The main sections of the pipeline includes the following steps:
+1. Reads quality control ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+3. Reads decontmination
+4. Clean raw-reads mapping using BWA or Sourmash or both
+5. Taxonomic profiles generation
+6. Functional profiles inference
+
+The final output includes a species relative abundance table, Pfam and KEGG Orthologs (KO) count tables, a KEGG modules completeness table, and DRAM-style visuals.
+
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
 
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
 
 ## Usage
 
