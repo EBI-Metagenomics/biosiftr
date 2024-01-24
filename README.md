@@ -14,8 +14,8 @@
 The main sections of the pipeline includes the following steps:
 1. Reads quality control ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
-3. Reads decontmination ([`bwa-mem2`](https://github.com/bwa-mem2/bwa-mem2))
-4. Clean raw-reads mapping using bwa-mem2, [`Sourmash`](https://sourmash.readthedocs.io/en/latest/command-line.html) or both
+3. Reads decontamination versus human and host ([`bwa-mem2`](https://github.com/bwa-mem2/bwa-mem2))
+4. Mapping clean raw-reads using bwa-mem2, [`Sourmash`](https://sourmash.readthedocs.io/en/latest/command-line.html) or both
 5. Taxonomic profiles generation
 6. Functional profiles inference
 
@@ -30,12 +30,20 @@ The final output includes a species relative abundance table, Pfam and KEGG Orth
 
 ### Required reference databases
 
-If this is the first time you are running the pipelne with a specific biome, you need to download the precomputed databases from the EBI FTP site running the following command from the 
+The first time you run the pipeline you need to put available the genome reference of human indexed for bwa-mem2 necesary for the fist step of decontamination.
 
 ```bash
 cd ebi-metagenomics-shallowmapping
-mkdir databases && cd databases
-wget ftp/url/biome.tar.gz
+mkdir -p databases/human_db && cd databases/human_db
+wget -O hg38.fa.gz https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_genomic.fna.gz
+nextflow run /PATH/ebi-metagenomics-shallowmapping/index_human.nf
+```
+
+In addition, if this is the first time you are running the pipeline with a specific biome, you need to download the precomputed databases from the EBI FTP site.
+
+```bash
+cd ebi-metagenomics-shallowmapping/databases
+wget https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/shallow-mapping/biome.tar.gz
 tar -xvf biome.tar.gz
 ```
 
@@ -56,10 +64,11 @@ Now, you can run the pipeline using:
 
 ```bash
 nextflow run ebi-metagenomics/shallowmapping \
-   -profile <docker/singularity/.../institute> \
-   --biome <chicken_gut/mouse_gut/human_skin> \
+   -profile <singularity,institute> \
+   --biome <chicken-gut-v1-0-1/mouse-gut-v1-0> \
+   --mapping_tool <bwa/sourmash/both> default = `sourmash` \
    --input samplesheet.csv \
-   --outdir <OUTDIR>
+   --outdir <OUTDIR> default = `results`
 ```
 
 By the moment, the biome selection is limited to the precomputed databases available to downloading. Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) under request by opening an issue in this repo.
