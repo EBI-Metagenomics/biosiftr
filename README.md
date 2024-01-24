@@ -9,73 +9,70 @@
 
 ## Introduction
 
-**ebi-metagenomics/shallowmapping** is a bioinformatics pipeline that generates functional profiles for shallow shotgun using low-yield (shallow shotgun: < 10 M reads) short raw-reads mapping versus a database of MGnify biome-specific genome catalogues.
-
-The input is a csv file having the following columns: sample name, location of the read 1 fastq file (file_1.fq.gz), location of the read 2 fastq file (file_2.fq.gz).
+**ebi-metagenomics/shallowmapping** is a bioinformatics pipeline that generates functional profiles for shallow shotgun using low-yield (shallow shotgun: < 10 M reads) short- raw-reads mapping versus a database of MGnify biome-specific genome catalogues.
 
 The main sections of the pipeline includes the following steps:
 1. Reads quality control ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
-3. Reads decontmination
-4. Clean raw-reads mapping using BWA or Sourmash or both
+3. Reads decontmination ([`bwa-mem2`](https://github.com/bwa-mem2/bwa-mem2))
+4. Clean raw-reads mapping using bwa-mem2, [`Sourmash`](https://sourmash.readthedocs.io/en/latest/command-line.html) or both
 5. Taxonomic profiles generation
 6. Functional profiles inference
 
 The final output includes a species relative abundance table, Pfam and KEGG Orthologs (KO) count tables, a KEGG modules completeness table, and DRAM-style visuals.
 
-
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
+<p align="center" width="100%">
+   <img src="docs/images/workflow.png" width="90%"/>
+</p>
 
 
 ## Usage
 
-:::note
-If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how
-to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline)
-with `-profile test` before running the workflow on actual data.
-:::
+### Required reference databases
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
+If this is the first time you are running the pipelne with a specific biome, you need to download the precomputed databases from the EBI FTP site running the following command from the 
 
-First, prepare a samplesheet with your input data that looks as follows:
+```bash
+cd ebi-metagenomics-shallowmapping
+mkdir databases && cd databases
+wget ftp/url/biome.tar.gz
+tar -xvf biome.tar.gz
+```
+
+### Running the pipeline
+
+Prepare a samplesheet with your input data that looks as follows:
 
 `samplesheet.csv`:
 
 ```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+sample_id,fastq_1,fastq_2
+test,/PATH/test_R1.fq.gz,/PATH/test_R2.fq.gz
 ```
 
 Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
 
--->
-
 Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
 nextflow run ebi-metagenomics/shallowmapping \
    -profile <docker/singularity/.../institute> \
+   --biome <chicken_gut/mouse_gut/human_skin> \
    --input samplesheet.csv \
    --outdir <OUTDIR>
 ```
 
-:::warning
-Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those
-provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
-see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
-:::
+By the moment, the biome selection is limited to the precomputed databases available to downloading. Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) under request by opening an issue in this repo.
+
 
 ## Credits
 
-ebi-metagenomics/shallowmapping was originally written by Alejandra Escobar.
+ebi-metagenomics/shallowmapping was originally written by @Ales-ibt.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+@mberacochea
+
 
 ## Contributions and Support
 
