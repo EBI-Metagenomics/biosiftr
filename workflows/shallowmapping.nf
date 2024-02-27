@@ -50,6 +50,31 @@ include { FASTQC                      } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
+include { FASTP } from '../modules/nf-core/fastp/main'
+
+include { BWAMEM2_INDEX } from '../modules/nf-core/bwamem2/index/main'
+include { BWAMEM2_MEM } from '../modules/nf-core/bwamem2/mem/main'
+
+include { SOURMASH_GATHER } from '../modules/nf-core/sourmash/gather/main'
+include { SOURMASH_SKETCH } from '../modules/nf-core/sourmash/sketch/main'
+
+include { SAMTOOLS_VIEW } from '../modules/nf-core/samtools/view/main'
+include { SAMTOOLS_SORT } from '../modules/nf-core/samtools/sort/main'
+include { SAMTOOLS_INDEX } from '../modules/nf-core/samtools/index/main'
+include { SAMTOOLS_BAM2FQ } from '../modules/nf-core/samtools/bam2fq/main'
+
+/////////////////////////////////////////////////////
+/* --  Create channels for reference databases  -- */
+/////////////////////////////////////////////////////
+
+ch_sourmash_db              = file(params.sourmash_db)
+ch_bwa_db                   = file(params.bwa_db)                 
+ch_pangenome_db             = file(params.pangenome_db)
+
+ch_host_ref_genome          = file(params.host_ref)
+ch_human_ref_genome         = file(params.human_ref)
+
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -70,21 +95,27 @@ workflow SHALLOWMAPPING {
         file(params.input)
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
-    // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")
-    // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
-    // ! There is currently no tooling to help you write a sample sheet schema
+
+
+
+    // ---- combine data for reads pre-processing ---- //
+    groupReads = { meta, fq1, fq2 ->
+        if (fq2 == []) {
+            return tuple(meta, [fq1])
+        }
+        else {
+            return tuple(meta, [fq1, fq2])
+        }
+    }
+    meta_and_reads = Channel.fromSamplesheet("samplesheet", header: true, sep: ',').map(groupReads) // [ meta, [raw_reads] ]
+
 
     //
     // MODULE: Run FastQC
     //
-    FASTQC (
-        INPUT_CHECK.out.reads
-    )
+    FASTQC ( meta_and_reads )
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
 
     //
     // MODULE: MultiQC
@@ -108,6 +139,33 @@ workflow SHALLOWMAPPING {
         ch_multiqc_logo.toList()
     )
     multiqc_report = MULTIQC.out.report.toList()
+
+
+    //
+    // MODULE: Raw-reads QC
+    //
+    FASTP ( meta_and_reads )
+    ch_versions = ch_versions.mix(FASTP.out.versions.first())
+    
+
+   
+    //
+    // MODULE: HQ raw-reads decontamination
+    //
+
+BWAMEM2_MEM(FASTP.out.reads)
+
+
+
+
+
+
+
+
+    CUSTOM_DUMPSOFTWAREVERSIONS (
+        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    )
+
 }
 
 /*

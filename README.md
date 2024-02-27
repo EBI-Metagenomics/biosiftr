@@ -54,11 +54,11 @@ Prepare a samplesheet with your input data that looks as follows:
 `samplesheet.csv`:
 
 ```csv
-sample_id,fastq_1,fastq_2
+sample,fastq_1,fastq_2
 test,/PATH/test_R1.fq.gz,/PATH/test_R2.fq.gz
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
+Each row represents a fastq file (single-end) or a pair of fastq files (paired end). When single-end use the `single_end` in the header for column 2 instead of `fastq_1`.
 
 Now, you can run the pipeline using:
 
