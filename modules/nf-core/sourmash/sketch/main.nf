@@ -19,7 +19,7 @@ process SOURMASH_SKETCH {
 
     script:
     // required defaults for the tool to run, but can be overridden
-    def args = task.ext.args ?: "dna --param-string 'scaled=1000,k=21,k=31,k=51,abund'"
+    def args = task.ext.args ?: "dna --param-string 'scaled=1000,k=51,abund'"
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     sourmash sketch \\

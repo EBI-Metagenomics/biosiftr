@@ -29,21 +29,18 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// NF-CORE MODULES
+// Preprocessing modules
 include { FASTQC                      } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-
-
-// LOCAL MODULES
 include { FASTP                       } from '../modules/local/fastp/main'
 
-
+// Mapping modules
 //include { BWAMEM2_INDEX               } from '../modules/nf-core/bwamem2/index/main'
 //include { BWAMEM2_MEM                 } from '../modules/nf-core/bwamem2/mem/main'
 
-//include { SOURMASH_GATHER             } from '../modules/nf-core/sourmash/gather/main'
-//include { SOURMASH_SKETCH             } from '../modules/nf-core/sourmash/sketch/main'
+include { SOURMASH_GATHER             } from '../modules/nf-core/sourmash/gather/main'
+include { SOURMASH_SKETCH             } from '../modules/nf-core/sourmash/sketch/main'
 
 //include { SAMTOOLS_VIEW               } from '../modules/nf-core/samtools/view/main'
 //include { SAMTOOLS_SORT               } from '../modules/nf-core/samtools/sort/main'
@@ -115,7 +112,6 @@ workflow SHALLOWMAPPING {
     human_ref = Channel.fromPath("$params.reference_genomes_folder/hg38*", checkIfExists: true).collect().map { db_files ->
         [ [id: 'hg38'], db_files ]
     }
-
     HUMAN_DECONT ( FASTP.out.reads, human_ref )
 
     // Creating channel for decontamination with host when biome != human
@@ -123,7 +119,6 @@ workflow SHALLOWMAPPING {
         decont_reads = HUMAN_DECONT.out.decontaminated_reads
     } else {
         def host_name = params.biome.split('-')[0]
-        println host_name
         host_ref = Channel.fromPath("$params.reference_genomes_folder/$host_name.*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name], db_files ]
         }
@@ -131,6 +126,15 @@ workflow SHALLOWMAPPING {
         decont_reads = HOST_DECONT.out.decontaminated_reads
     }
 
+
+    // ---- MAPPING READS: sourmash as default plus optional bwa-mem ---- //
+    // Sketching decontaminated reads
+    SOURMASH_SKETCH( decont_reads )
+    SOURMASH_GATHER( SOURMASH_SKETCH.out.signatures, params.sourmash_db, false, false, false, false )
+
+
+
+     // Add the condition and the option to run also bwa-mem2 mapping
 
 
 
