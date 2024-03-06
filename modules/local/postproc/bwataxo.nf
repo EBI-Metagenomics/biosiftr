@@ -1,4 +1,4 @@
-process POSTPROC_SOURMASHTAXO {
+process POSTPROC_BWATAXO {
     tag "$meta.id"
     label 'process_low'
 
@@ -7,11 +7,11 @@ process POSTPROC_SOURMASHTAXO {
         'quay.io/biocontainers/biopython:1.81' }"
 
     input:
-    tuple val(meta), path(gather_result_csv)
+    tuple val(meta), path(cov_file)
     path(metadata_file)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: sm_taxo
+    tuple val(meta), path("*.tsv"), emit: bwa_taxo
     path "versions.yml"           , emit: versions
 
     when:
@@ -20,12 +20,12 @@ process POSTPROC_SOURMASHTAXO {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script. 
+    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
     """
-    sm_genome2species.py \\
-        --sm_csv $gather_result_csv \\
-        --metadata $metadata_file  \\
-        --output ${prefix}_sm_species.tsv  \\
+    bwa_genome2species.py \\
+        --genomes_relab $cov_file  \\
+        --metadata $metadata_file \\
+        --output ${prefix}_bwa_species.tsv \\
         $args
 
     cat <<-END_VERSIONS > versions.yml
@@ -39,7 +39,7 @@ process POSTPROC_SOURMASHTAXO {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.0'
     """
-    touch ${prefix}_sm_species.tsv
+    touch ${prefix}_bwa_species.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

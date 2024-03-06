@@ -1,17 +1,16 @@
-process POSTPROC_SOURMASHTAXO {
+process POSTPROC_BAM2COV {
     tag "$meta.id"
     label 'process_low'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/biopython:1.81':
-        'quay.io/biocontainers/biopython:1.81' }"
+        'https://depot.galaxyproject.org/singularity/pysam:0.22.0--py39hcada746_0':
+        'quay.io/biocontainers/pysam:0.22.0--py38h15b938a_0' }"
 
     input:
-    tuple val(meta), path(gather_result_csv)
-    path(metadata_file)
+    tuple val(meta), path(bam), path(bai)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: sm_taxo
+    tuple val(meta), path("*.tsv"), emit: cov_file
     path "versions.yml"           , emit: versions
 
     when:
@@ -20,12 +19,11 @@ process POSTPROC_SOURMASHTAXO {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script. 
+    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
     """
-    sm_genome2species.py \\
-        --sm_csv $gather_result_csv \\
-        --metadata $metadata_file  \\
-        --output ${prefix}_sm_species.tsv  \\
+    bam2cov_filt.py \\
+        --bwa_bam $bam \\
+        --prefix ${prefix}_u_relab_01 \\
         $args
 
     cat <<-END_VERSIONS > versions.yml
@@ -39,7 +37,7 @@ process POSTPROC_SOURMASHTAXO {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.0'
     """
-    touch ${prefix}_sm_species.tsv
+    touch ${prefix}_u_relab_01.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -2,7 +2,6 @@
 
 import argparse
 import os.path
-import pysam
 import sys
 from Bio import SeqIO
 

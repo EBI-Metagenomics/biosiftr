@@ -30,18 +30,21 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 */
 
 // Preprocessing modules
-include { FASTQC                      } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { FASTP                       } from '../modules/local/fastp/main'
+include { FASTQC                             } from '../modules/nf-core/fastqc/main'
+include { MULTIQC                            } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS        } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { FASTP                              } from '../modules/local/fastp/main'
 
 // Mapping modules
-include { SOURMASH_GATHER             } from '../modules/nf-core/sourmash/gather/main'
-include { SOURMASH_SKETCH             } from '../modules/nf-core/sourmash/sketch/main'
-include { POSTPROC_SOURMASHTAXO       } from '../modules/local/postproc/sourmashtaxo'
-include { POSTPROC_FUNCTIONSPRED      } from '../modules/local/postproc/functionspred'
+include { SOURMASH_GATHER                    } from '../modules/nf-core/sourmash/gather/main'
+include { SOURMASH_SKETCH                    } from '../modules/nf-core/sourmash/sketch/main'
+include { POSTPROC_SOURMASHTAXO              } from '../modules/local/postproc/sourmashtaxo'
+include { POSTPROC_FUNCTIONSPRED as SM_FUNC  } from '../modules/local/postproc/functionspred'
 
-include { BWAMEM2_MEM                 } from '../modules/nf-core/bwamem2/mem/main'
+include { BWAMEM2_MEM                        } from '../modules/nf-core/bwamem2/mem/main'
+include { POSTPROC_BAM2COV                   } from '../modules/local/postproc/bam2cov'
+include { POSTPROC_BWATAXO                   } from '../modules/local/postproc/bwataxo'
+include { POSTPROC_FUNCTIONSPRED as BWA_FUNC } from '../modules/local/postproc/functionspred'
 
 
 /*
@@ -49,22 +52,10 @@ include { BWAMEM2_MEM                 } from '../modules/nf-core/bwamem2/mem/mai
     IMPORT SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-q
+
 include { READS_BWAMEM2_DECONTAMINATION as PHIX_DECONT  } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
 include { READS_BWAMEM2_DECONTAMINATION as HUMAN_DECONT } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
 include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONT  } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
-
-
-/////////////////////////////////////////////////////
-/* --  Create channels for reference databases  -- */
-/////////////////////////////////////////////////////
-
-//ch_sourmash_db              = file(params.sourmash_db)
-//ch_bwa_db                   = file(params.bwa_db)                 
-//ch_pangenome_db             = file(params.pangenome_db)
-
-//ch_host_ref_genome          = file(params.host_ref)
-//ch_human_ref_genome         = file(params.human_ref)
 
 
 /*
@@ -145,8 +136,8 @@ workflow SHALLOWMAPPING {
     POSTPROC_SOURMASHTAXO( SOURMASH_GATHER.out.result, "$params.prefix_path/genomes-all_metadata.tsv" )
     ch_versions = ch_versions.mix(POSTPROC_SOURMASHTAXO.out.versions.first())    
 
-    POSTPROC_FUNCTIONSPRED( POSTPROC_SOURMASHTAXO.out.sm_taxo, params.pangenome_db, 'sm' )
-    ch_versions = ch_versions.mix(POSTPROC_FUNCTIONSPRED.out.versions.first())
+    SM_FUNC( POSTPROC_SOURMASHTAXO.out.sm_taxo, params.pangenome_db, 'sm' )
+    ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
 
 
     // ---- MAPPING READS with bwamem2: mapping, cleaning output, and profiling ---- //
@@ -154,10 +145,17 @@ workflow SHALLOWMAPPING {
         genomes_ref = Channel.fromPath("$params.bwa_db*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name ], db_files ]
         }
-        BWAMEM2_MEM( decont_reads, genomes_ref, true )        
-        ch_versions = ch_versions.mix(BWAMEM2_MEM.out.versions.first())
+        BWAMEM2_MEM( decont_reads, genomes_ref )        
+        //ch_versions = ch_versions.mix(BWAMEM2_MEM.out.versions.first())
 
+        POSTPROC_BAM2COV( BWAMEM2_MEM.out.bam )
+        ch_versions = ch_versions.mix(POSTPROC_BAM2COV.out.versions.first())
 
+	POSTPROC_BWATAXO( POSTPROC_BAM2COV.out.cov_file, "$params.prefix_path/genomes-all_metadata.tsv" )
+	ch_versions = ch_versions.mix(POSTPROC_BWATAXO.out.versions.first())
+
+        BWA_FUNC( POSTPROC_BWATAXO.out.bwa_taxo, params.pangenome_db, 'bwa' )
+        ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
     }
 
 

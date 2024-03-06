@@ -36,11 +36,6 @@ input:
   - index:
       type: file
       description: BWA genome index files
-      pattern: "Directory containing BWA index *.{0132,amb,ann,bwt.2bit.64,pac}"
-  - sort_bam:
-      type: boolean
-      description: use samtools sort (true) or samtools view (false)
-      pattern: "true or false"
 output:
   - meta:
       type: map
@@ -50,7 +45,9 @@ output:
   - bam:
       type: file
       description: Output BAM file containing read alignments
-      pattern: "*.{bam}"
+  - bai:
+      type: file
+      description: Index of output BAM file
   - versions:
       type: file
       description: File containing software versions
