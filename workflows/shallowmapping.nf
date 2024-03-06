@@ -36,16 +36,12 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoft
 include { FASTP                       } from '../modules/local/fastp/main'
 
 // Mapping modules
-//include { BWAMEM2_INDEX               } from '../modules/nf-core/bwamem2/index/main'
-//include { BWAMEM2_MEM                 } from '../modules/nf-core/bwamem2/mem/main'
-
 include { SOURMASH_GATHER             } from '../modules/nf-core/sourmash/gather/main'
 include { SOURMASH_SKETCH             } from '../modules/nf-core/sourmash/sketch/main'
+include { POSTPROC_SOURMASHTAXO       } from '../modules/local/postproc/sourmashtaxo'
+include { POSTPROC_FUNCTIONSPRED      } from '../modules/local/postproc/functionspred'
 
-//include { SAMTOOLS_VIEW               } from '../modules/nf-core/samtools/view/main'
-//include { SAMTOOLS_SORT               } from '../modules/nf-core/samtools/sort/main'
-//include { SAMTOOLS_INDEX              } from '../modules/nf-core/samtools/index/main'
-//include { SAMTOOLS_BAM2FQ             } from '../modules/nf-core/samtools/bam2fq/main'
+include { BWAMEM2_MEM                 } from '../modules/nf-core/bwamem2/mem/main'
 
 
 /*
@@ -53,7 +49,8 @@ include { SOURMASH_SKETCH             } from '../modules/nf-core/sourmash/sketch
     IMPORT SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
+q
+include { READS_BWAMEM2_DECONTAMINATION as PHIX_DECONT  } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
 include { READS_BWAMEM2_DECONTAMINATION as HUMAN_DECONT } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
 include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONT  } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
 
@@ -108,35 +105,60 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
 
-    // Creating channels for decontamination with human
+    // Creating channel for decontamination with phix
+    phix_ref = Channel.fromPath("$params.reference_genomes_folder/phiX174*", checkIfExists: true).collect().map { db_files ->
+        [ [id: 'phiX174'], db_files ]
+    }
+    PHIX_DECONT ( FASTP.out.reads, phix_ref )
+    ch_versions = ch_versions.mix(PHIX_DECONT.out.versions.first())
+
+    // Creating channel for decontamination with human
     human_ref = Channel.fromPath("$params.reference_genomes_folder/hg38*", checkIfExists: true).collect().map { db_files ->
         [ [id: 'hg38'], db_files ]
     }
-    HUMAN_DECONT ( FASTP.out.reads, human_ref )
+    HUMAN_DECONT ( PHIX_DECONT.out.decontaminated_reads, human_ref )
+    ch_versions = ch_versions.mix(HUMAN_DECONT.out.versions.first())
 
     // Creating channel for decontamination with host when biome != human
+    def host_name = params.biome.split('-')[0]
     if ('human' in params.biome) {
         decont_reads = HUMAN_DECONT.out.decontaminated_reads
     } else {
-        def host_name = params.biome.split('-')[0]
         host_ref = Channel.fromPath("$params.reference_genomes_folder/$host_name.*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name], db_files ]
         }
         HOST_DECONT( HUMAN_DECONT.out.decontaminated_reads, host_ref )
         decont_reads = HOST_DECONT.out.decontaminated_reads
+        ch_versions = ch_versions.mix(HOST_DECONT.out.versions.first())
     }
 
 
-    // ---- MAPPING READS: sourmash as default plus optional bwa-mem ---- //
-    // Sketching decontaminated reads
+    // ---- MAPPING READS with sourmash: sketch decont reads, mapping, and profiling ---- //
+    // Sketching decontaminated reads and running mapping
     SOURMASH_SKETCH( decont_reads )
+    ch_versions = ch_versions.mix(SOURMASH_SKETCH.out.versions.first())
+
     SOURMASH_GATHER( SOURMASH_SKETCH.out.signatures, params.sourmash_db, false, false, false, false )
+    ch_versions = ch_versions.mix(SOURMASH_GATHER.out.versions.first())
+
+    // Processing sourmash mapping output: generating taxonomic and functional profiles
+    POSTPROC_SOURMASHTAXO( SOURMASH_GATHER.out.result, "$params.prefix_path/genomes-all_metadata.tsv" )
+    ch_versions = ch_versions.mix(POSTPROC_SOURMASHTAXO.out.versions.first())    
+
+    POSTPROC_FUNCTIONSPRED( POSTPROC_SOURMASHTAXO.out.sm_taxo, params.pangenome_db, 'sm' )
+    ch_versions = ch_versions.mix(POSTPROC_FUNCTIONSPRED.out.versions.first())
 
 
+    // ---- MAPPING READS with bwamem2: mapping, cleaning output, and profiling ---- //
+    if (params.run_bwa) {
+        genomes_ref = Channel.fromPath("$params.bwa_db*", checkIfExists: true).collect().map { db_files ->
+        [ [id: host_name ], db_files ]
+        }
+        BWAMEM2_MEM( decont_reads, genomes_ref, true )        
+        ch_versions = ch_versions.mix(BWAMEM2_MEM.out.versions.first())
 
-     // Add the condition and the option to run also bwa-mem2 mapping
 
-
+    }
 
 
     // ---- Multiqc report ---- //

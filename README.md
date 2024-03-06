@@ -66,12 +66,12 @@ Now, you can run the pipeline using:
 nextflow run ebi-metagenomics/shallowmapping \
    -profile <singularity,institute> \
    --biome <chicken-gut-v1-0-1/mouse-gut-v1-0> \
-   --mapping_tool <bwa/sourmash/both> default = `sourmash` \
+   --run_bwa <true/false> default = `false` \
    --input samplesheet.csv \
    --outdir <OUTDIR> default = `results`
 ```
 
-By the moment, the biome selection is limited to the precomputed databases available to downloading. Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) under request by opening an issue in this repo.
+At the moment, the biome selection is limited to the precomputed databases available to downloading. Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) under request by opening an issue in this repo.
 
 
 ## Credits

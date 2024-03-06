@@ -205,12 +205,16 @@
     "properties": {
         "biome": {
             "type": "string",
-            "description": "This can be any of the MGnify catalogues for which shallow-mapping databases are currently available"
+            "description": "This can be any of the MGnify catalogues for which shallow-mapping databases are currently available",
+	    "enum": [ 
+                "chicken-gut-v1-0-1", 
+                "mouse-gut-v1-0" 
+            ]
         },
-        "mapping_tool": {
-            "type": "string",
-            "default": "sourmash",
-            "description": "Mapping tool required to generate the taxonomic profiles. It could be bwa-mem2, Sourmash or both."
+        "run_bwa": {
+            "type": "boolean",
+            "default": false,
+            "description": "Generate extra results of taxonomic and functional profiles using bwa-mem2"
         },
         "sourmash_db": {
             "type": "string",
@@ -248,5 +252,5 @@
             "description": "Location to store singularity images"
         }
     },
-    "required": ["biome", "mapping_tool"]
+    "required": ["biome"]
 }
