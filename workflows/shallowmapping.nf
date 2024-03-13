@@ -41,7 +41,7 @@ include { SOURMASH_SKETCH                    } from '../modules/nf-core/sourmash
 include { POSTPROC_SOURMASHTAXO              } from '../modules/local/postproc/sourmashtaxo'
 include { POSTPROC_FUNCTIONSPRED as SM_FUNC  } from '../modules/local/postproc/functionspred'
 
-include { BWAMEM2_MEM                        } from '../modules/nf-core/bwamem2/mem/main'
+include { ALIGN_BWAMEM2                      } from '../modules/local/align/bwamem2'
 include { POSTPROC_BAM2COV                   } from '../modules/local/postproc/bam2cov'
 include { POSTPROC_BWATAXO                   } from '../modules/local/postproc/bwataxo'
 include { POSTPROC_FUNCTIONSPRED as BWA_FUNC } from '../modules/local/postproc/functionspred'
@@ -87,14 +87,9 @@ workflow SHALLOWMAPPING {
     ch_reads = Channel.fromSamplesheet("input").map(groupReads) // [ meta, [raw_reads] ]
 
 
-
-    // ---- PREPROCESSING: reads QC, trimming and decontamination ---- //
-    FASTQC ( ch_reads )
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
-
+    // ---- PREPROCESSING: Trimming, decontamination, and post-treatment qc ---- //
     FASTP ( ch_reads )
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
-
 
     // Creating channel for decontamination with phix
     phix_ref = Channel.fromPath("$params.reference_genomes_folder/phiX174*", checkIfExists: true).collect().map { db_files ->
@@ -123,6 +118,10 @@ workflow SHALLOWMAPPING {
         ch_versions = ch_versions.mix(HOST_DECONT.out.versions.first())
     }
 
+    // QC report after decontamination
+    FASTQC ( decont_reads )
+    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+
 
     // ---- MAPPING READS with sourmash: sketch decont reads, mapping, and profiling ---- //
     // Sketching decontaminated reads and running mapping
@@ -145,10 +144,10 @@ workflow SHALLOWMAPPING {
         genomes_ref = Channel.fromPath("$params.bwa_db*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name ], db_files ]
         }
-        BWAMEM2_MEM( decont_reads, genomes_ref )        
-        //ch_versions = ch_versions.mix(BWAMEM2_MEM.out.versions.first())
+        ALIGN_BWAMEM2( decont_reads, genomes_ref )
+        ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
-        POSTPROC_BAM2COV( BWAMEM2_MEM.out.bam )
+        POSTPROC_BAM2COV( ALIGN_BWAMEM2.out.bam )
         ch_versions = ch_versions.mix(POSTPROC_BAM2COV.out.versions.first())
 
 	POSTPROC_BWATAXO( POSTPROC_BAM2COV.out.cov_file, "$params.prefix_path/genomes-all_metadata.tsv" )
@@ -174,17 +173,16 @@ workflow SHALLOWMAPPING {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{ it[1] }.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
 
-    ch_multiqc_files = ch_multiqc_files.mix( FASTP.out.json )
-
-    //MULTIQC (
-    //    ch_multiqc_files.collect(),
-    //    ch_multiqc_config.toList(),
-    //    ch_multiqc_custom_config.toList(),
-    //    ch_multiqc_logo.toList()
-    //)
-    //multiqc_report = MULTIQC.out.report.toList()
+    MULTIQC (
+        ch_multiqc_files.collect(),
+        ch_multiqc_config.toList(),
+        ch_multiqc_custom_config.toList(),
+        ch_multiqc_logo.toList()
+    )
+    multiqc_report = MULTIQC.out.report.toList()
 
 }
 
