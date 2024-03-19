@@ -1,35 +1,38 @@
 process POSTPROC_FUNCTIONSPRED {
     tag "$meta.id"
-    label 'process_low'
+    label 'process_single'
 
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/biopython:1.81':
         'quay.io/biocontainers/biopython:1.81' }"
 
-
     input:
     tuple val(meta), path(tax_tsv)
-    path(pangenome_db)
     val(tool)
+    val(core_mode)
+    path(pangenome_db)
+    path(dram_dbs)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: func_tables
-    path "versions.yml"           , emit: versions
+    tuple val(meta), path("*{_kegg,_pfams}.tsv") , emit: func_tables
+    tuple val(meta), path("*_species_dram.tsv")  , emit: dram_spec
+    tuple val(meta), path("*_community_dram.tsv"), emit: dram_comm
+    path "versions.yml"                          , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
     """
     species2functions.py \\
-        --db_path $pangenome_db \\
+        --pangenome_db $pangenome_db \\
+        --external_db $dram_dbs \\
         --relab $tax_tsv \\
-        --output ${prefix}_${tool} \\
-        $args
+        --core_mode $core_mode \\
+        --output ${prefix}_${tool}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -43,8 +46,10 @@ process POSTPROC_FUNCTIONSPRED {
     """
     touch ${tool}_${prefix}_community_kegg.tsv
     touch ${tool}_${prefix}_community_pfams.tsv
+    touch ${tool}_${prefix}_community_dram.tsv
     touch ${tool}_${prefix}_species_kegg.tsv
     touch ${tool}_${prefix}_species_pfams.tsv
+    touch ${tool}_${prefix}_species_dram.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

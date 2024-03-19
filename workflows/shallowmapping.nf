@@ -40,12 +40,13 @@ include { SOURMASH_GATHER                    } from '../modules/nf-core/sourmash
 include { SOURMASH_SKETCH                    } from '../modules/nf-core/sourmash/sketch/main'
 include { POSTPROC_SOURMASHTAXO              } from '../modules/local/postproc/sourmashtaxo'
 include { POSTPROC_FUNCTIONSPRED as SM_FUNC  } from '../modules/local/postproc/functionspred'
+include { DRAM_DISTILL as SM_DRAM            } from '../modules/local/dram/distill'
 
 include { ALIGN_BWAMEM2                      } from '../modules/local/align/bwamem2'
 include { POSTPROC_BAM2COV                   } from '../modules/local/postproc/bam2cov'
 include { POSTPROC_BWATAXO                   } from '../modules/local/postproc/bwataxo'
 include { POSTPROC_FUNCTIONSPRED as BWA_FUNC } from '../modules/local/postproc/functionspred'
-
+include { DRAM_DISTILL as BWA_DRAM           } from '../modules/local/dram/distill'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -135,9 +136,17 @@ workflow SHALLOWMAPPING {
     POSTPROC_SOURMASHTAXO( SOURMASH_GATHER.out.result, "$params.prefix_path/genomes-all_metadata.tsv" )
     ch_versions = ch_versions.mix(POSTPROC_SOURMASHTAXO.out.versions.first())    
 
-    SM_FUNC( POSTPROC_SOURMASHTAXO.out.sm_taxo, params.pangenome_db, 'sm' )
-    ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
+    if (params.core_mode) {
+        SM_FUNC( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', params.pangenome_db, params.dram_dbs )
+        ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
 
+    } else {
+        SM_FUNC( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', params.pangenome_db, params.dram_dbs )
+        ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
+    }
+
+    SM_DRAM( SM_FUNC.out.dram_spec, 'sm', 'species')
+    ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
 
     // ---- MAPPING READS with bwamem2: mapping, cleaning output, and profiling ---- //
     if (params.run_bwa) {
@@ -153,10 +162,17 @@ workflow SHALLOWMAPPING {
 	POSTPROC_BWATAXO( POSTPROC_BAM2COV.out.cov_file, "$params.prefix_path/genomes-all_metadata.tsv" )
 	ch_versions = ch_versions.mix(POSTPROC_BWATAXO.out.versions.first())
 
-        BWA_FUNC( POSTPROC_BWATAXO.out.bwa_taxo, params.pangenome_db, 'bwa' )
-        ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
-    }
+        if (params.core_mode) {
+            BWA_FUNC( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', params.pangenome_db, params.dram_dbs )
+            ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
+        } else {
+            BWA_FUNC( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', params.pangenome_db, params.dram_dbs )
+            ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
+        }
 
+        BWA_DRAM(BWA_FUNC.out.dram_spec, 'bwa', 'species')
+        ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
+    }
 
     // ---- Multiqc report ---- //
 

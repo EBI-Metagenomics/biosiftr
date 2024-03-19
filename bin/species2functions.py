@@ -60,12 +60,13 @@ def relab_parser( relab_table ):
             reps_list.append(rep_genome)
             lineage = l_line[0].split(';')
             lineage.pop(-1)
-            lineage = ';'.join(lineage)
-            taxonomy[rep_genome] = lineage
+            lineage = [element for element in lineage if len(element) != 3]
+            last_rank = lineage[-1]
+            taxonomy[rep_genome] = last_rank
     return( reps_list, taxonomy )
 
 
-def functions_finder( reps_list, db_path ):
+def functions_finder_pan( reps_list, db_path ):
     functions_dict = {}
     species_kos = {}
     species_pfams = {}
@@ -86,7 +87,7 @@ def functions_finder( reps_list, db_path ):
             next(input_file)
             for line in input_file:
                 per_gene_dict[rep_genome].append(line.rstrip())
-                contig,gene_id,start,end,strand,kegg,pfam,cazy = line.rstrip().split('\t')
+                contig,gene_id,start,end,strand,kegg,pfam,cazy,core = line.rstrip().split('\t')
 
                 if contig not in positions:
                     positions[contig] = {}
@@ -137,7 +138,80 @@ def functions_finder( reps_list, db_path ):
     return( functions_dict, all_kos, all_pfams, species_kos, species_pfams, per_gene_dict, gene_positions )
 
 
-def community_writer( functions_dict, all_kos, all_pfams, output ):
+def functions_finder_core( reps_list, db_path ):
+    functions_dict = {}
+    species_kos = {}
+    species_pfams = {}
+    per_gene_dict = {}
+    gene_positions = {}
+    all_kos = []
+    all_pfams = []
+    for rep_genome in reps_list:
+        db_file = db_path + '/' + rep_genome + '_clstr.tsv'
+        positions = {}
+        species_kos[rep_genome] = []
+        species_pfams[rep_genome] = []
+        per_gene_dict[rep_genome] = []
+        pan_kos = []
+        pan_pfams = []
+        with open(db_file, 'r') as input_file:
+            next(input_file)
+            next(input_file)
+            for line in input_file:
+                contig,gene_id,start,end,strand,kegg,pfam,cazy,core = line.rstrip().split('\t')
+
+                if contig not in positions:
+                    positions[contig] = {}
+                    pos = 1
+                else:
+                    pos += 1
+                gene_positions[gene_id] = str(pos)
+
+                if core == 'true':
+                    per_gene_dict[rep_genome].append(line.rstrip())
+                    if kegg != '-':
+                        if ',' in kegg:
+                            kegg_list = kegg.split(',')
+                        else:
+                            kegg_list = [kegg]
+                        pan_kos = pan_kos + kegg_list
+                        for current_ko in kegg_list:
+                            if not current_ko in species_kos[rep_genome]:
+                                species_kos[rep_genome].append(current_ko)
+
+                    if pfam != '-':
+                        if ',' in pfam:
+                            pfam_list = pfam.split(',')
+                        else:
+                            pfam_list = [pfam]
+                        pan_pfams = pan_pfams + pfam_list
+                        for current_pfam in pfam_list:
+                            if not current_pfam in species_pfams[rep_genome]:
+                                species_pfams[rep_genome].append(current_pfam)
+
+        pan_kos = list(set(pan_kos))
+        for ko in pan_kos:
+            all_kos.append(ko)
+            if ko in functions_dict:
+                functions_dict[ko] += 1
+            else:
+                functions_dict[ko] = 1
+
+        pan_pfams = list(set(pan_pfams))
+        for pfam in pan_pfams:
+            all_pfams.append(pfam)
+            if pfam in functions_dict:
+                functions_dict[pfam] += 1
+            else:
+                functions_dict[pfam] = 1
+
+    all_kos = list(set(all_kos))
+    all_pfams = list(set(all_pfams))
+
+    return( functions_dict, all_kos, all_pfams, species_kos, species_pfams, per_gene_dict, gene_positions )
+
+
+def community_writer( functions_dict, all_kos, all_pfams, output):
     with open(output+'_community_kegg.tsv', 'w') as output_file:
         output_file.write('ko_id\t'+output+'\n')
         for ko in all_kos:
@@ -190,14 +264,13 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
     with open(output+'_species_dram.tsv', 'w') as output_sp, \
         open(output+'_community_dram.tsv', 'w') as output_comm:
         output_sp.write('\t'.join(dram_header) + '\n')
-        output_comm.write('\t'.join(dram_header) + '\n')
 
         # Parsing the genes dictionary. We use the species_clstr id instead of fasta
         for species_clstr in per_gene_dict:
             for gene_line in per_gene_dict[species_clstr]:
                 gene_info = {}
 
-                # Populating empty columns first
+                # Populating empty columns
                 gene_info["peptidase_id"] = ''
                 gene_info["peptidase_family"] = ''
                 gene_info["peptidase_hit"] = ''
@@ -211,7 +284,8 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                 gene_info["heme_regulatory_motif_count"] = '0'
 
                 # Populating handy info
-                contig,gene_id,start,end,strand,kegg,pfam,cazy = gene_line.split('\t')
+                contig,gene_id,start,end,strand,kegg,pfam,cazy,core = gene_line.split('\t')
+                print(core)
                 gene_info["fasta"] = species_clstr
                 gene_info["scaffold"] = contig
                 gene_info["start_position"] = start
@@ -231,6 +305,11 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                         if cazy_id in dram_desc:
                             for cazy_desc in dram_desc[cazy_id]:
                                 cazy_desc_list.append(cazy_desc)
+                            last_element = cazy_desc_list.pop(-1)
+                            if any([ last_element.endswith(';'), last_element.endswith('.') ]):
+                                last_element = last_element[:-1]
+                            last_element = last_element + ' [' + cazy_id + ']'
+                            cazy_desc_list.append(last_element)
                     if len(cazy_desc_list) > 0:
                         cazy_hits = ';'.join(cazy_desc_list)
                         rank = 'D'
@@ -284,13 +363,13 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                 output_sp.write('\t'.join(to_print) + '\n')
 
                 gene_info["fasta"] = output
-                gene_info["bin_taxonomy"] = output
+                gene_info["bin_taxonomy"] = 'community:'+output
                 to_print = []
                 to_print.append(gene_id)
                 for header_key in dram_header[1:]:
                     to_print.append(gene_info[header_key])
                 output_comm.write('\t'.join(to_print) + '\n')
-
+                output_sp.write('\t'.join(to_print) + '\n')
 
 
 
@@ -317,6 +396,12 @@ def main():
         required=True,
     )
     parser.add_argument(
+        "--core_mode",
+        type=str,
+        help="Either `core` or `pan` to indicate the fraction of the pangenome to be used for functional inference. The `core` mode is recommended for large catalogues like human-gut and mouse-gut",
+        required=True,
+    )
+    parser.add_argument(
         "--output",
         type=str,
         help="Prefix to be used to name the output files. This string will also be used in headers",
@@ -324,25 +409,52 @@ def main():
     )
     args = parser.parse_args()
     
-
     pfam_db = args.external_db + "/Pfam-A.hmm.dat.gz"
-    dram_form = args.external_db + "/genome_summary_form.20220421.tsv"
+    dram_form = args.external_db + "/genome_summary_form.tsv"
 
     ### Calling functions
     ( pfam_desc ) = pfam_parser( pfam_db )
     ( dram_desc ) = dram_parser( dram_form )
     ( reps_list, taxonomy ) = relab_parser( args.relab )
-    ( functions_dict, 
+
+    if args.core_mode == 'pan':
+        ( functions_dict, 
             all_kos, 
             all_pfams, 
             species_kos, 
             species_pfams,
             per_gene_dict,
-            gene_positions ) = functions_finder( reps_list, args.pangenome_db )
+            gene_positions ) = functions_finder_pan( reps_list, args.pangenome_db )
+    elif args.core_mode == 'core':
+        ( functions_dict,
+            all_kos,
+            all_pfams,
+            species_kos,
+            species_pfams,
+            per_gene_dict,
+            gene_positions ) = functions_finder_core( reps_list, args.pangenome_db )
+    else:
+        exit("The option "+args.core_mode+" is not allowed. Chose eaither `pan` or `core`")
 
-    community_writer( functions_dict, all_kos, all_pfams, args.output )
-    species_writer( reps_list, all_kos, all_pfams, species_kos, species_pfams, args.output )
-    dram_writer( per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, args.output )
+    community_writer( 
+            functions_dict, 
+            all_kos, 
+            all_pfams, 
+            args.output)
+    species_writer( 
+            reps_list, 
+            all_kos, 
+            all_pfams, 
+            species_kos, 
+            species_pfams, 
+            args.output)
+    dram_writer( 
+            per_gene_dict, 
+            gene_positions, 
+            taxonomy, 
+            pfam_desc, 
+            dram_desc, 
+            args.output)
 
 
 if __name__ == "__main__":
