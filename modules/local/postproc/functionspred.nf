@@ -15,10 +15,13 @@ process POSTPROC_FUNCTIONSPRED {
     path(dram_dbs)
 
     output:
-    tuple val(meta), path("*{_kegg,_pfams}.tsv") , emit: func_tables
-    tuple val(meta), path("*_species_dram.tsv")  , emit: dram_spec
-    tuple val(meta), path("*_community_dram.tsv"), emit: dram_comm
-    path "versions.yml"                          , emit: versions
+    tuple val(meta), path("*_species_pfams.tsv")  , emit: pfam_spec
+    tuple val(meta), path("*_community_pfams.tsv"), emit: pfam_comm
+    tuple val(meta), path("*_species_kegg.tsv")   , emit: kegg_spec
+    tuple val(meta), path("*_community_kegg.tsv") , emit: kegg_comm
+    tuple val(meta), path("*_species_dram.tsv")   , emit: dram_spec
+    tuple val(meta), path("*_community_dram.tsv") , emit: dram_comm
+    path "versions.yml"                           , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

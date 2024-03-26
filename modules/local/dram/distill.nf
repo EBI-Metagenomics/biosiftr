@@ -15,8 +15,8 @@ process DRAM_DISTILL {
     val(in_type)    //species or community
 
     output:
-    tuple val(meta), path("dram_out/*"), emit: destill_out
-    path "versions.yml"                , emit: versions
+    tuple val(meta), path("*_dram.{html,tsv}"), emit: destill_out
+    path "versions.yml"                       , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -25,15 +25,25 @@ process DRAM_DISTILL {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.4.6' // WARN: dram has no option to print the tool version. This is the container version
+
     """
-    DRAM.py \\
-        distill \\
-        -i $dram_summary  \\
-        -o dram_out
-    mv dram_out/genome_stats.tsv dram_out/${prefix}_${tool}_${in_type}_stats.tsv
-    mv dram_out/metabolism_summary.xlsx dram_out/${prefix}_${tool}_${in_type}_summary.xlsx
-    mv dram_out/product.html dram_out/${prefix}_${tool}_${in_type}.html
-    mv dram_out/product.tsv dram_out/${prefix}_${tool}_${in_type}.tsv
+    if [[ "${in_type}" == "community" ]]; then
+        echo ",fasta,scaffold,gene_position,start_position,end_position,strandedness,rank,kegg_id,kegg_hit,pfam_hits,cazy_best_hit,bin_taxonomy" | sed 's/,/\t/g' > community_input.txt
+        cat $dram_summary >> community_input.txt  
+        DRAM.py \\
+            distill \\
+            -i community_input.txt  \\
+            -o dram_out
+        mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
+        mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
+    else
+        DRAM.py \\
+            distill \\
+            -i $dram_summary  \\
+            -o dram_out
+        mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
+        mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -46,11 +56,10 @@ process DRAM_DISTILL {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.4.6' // WARN: dram has no option to print the version of the tool
     """
-    mkdir dram_out
-    touch dram_out/${prefix}_${tool}_${in_type}_stats.tsv
-    touch dram_out/${prefix}_${tool}_${in_type}_summary.xlsx
-    touch dram_out/${prefix}_${tool}_${in_type}.html
-    touch dram_out/${prefix}_${tool}_${in_type}.tsv
+    touch ${prefix}_${tool}_${in_type}_stats.tsv
+    touch ${prefix}_${tool}_${in_type}_summary.xlsx
+    touch ${prefix}_${tool}_${in_type}.html
+    touch ${prefix}_${tool}_${in_type}.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

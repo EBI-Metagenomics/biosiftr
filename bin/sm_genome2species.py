@@ -26,10 +26,11 @@ def metadata_parser( catalogue_metadata ):
 
 
 def aggregate_species( sm_csv, ref_spec_genome, out_name ):
+    prefix_name = out_name.replace('_species.tsv','')
     with gzip.open(sm_csv, 'rt', encoding='utf-8') as input_file, open(out_name,'w') as file_out:
         file_out.write("\t".join([
             'lineage',
-            'rel_abun'
+            prefix_name
         ])+"\n")
         next(input_file)
         for line in input_file:

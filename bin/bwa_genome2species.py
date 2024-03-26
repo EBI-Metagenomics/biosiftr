@@ -50,16 +50,15 @@ def aggregate_species( genomes_relab, ref_spec_genome, out_name ):
                 print('No species found in metadata file for '+reference_id)
 
     with open(out_name,'w') as file_out:
+        prefix_name = out_name.replace('_species.tsv','')
         file_out.write("\t".join([
             'lineage',
-            'reads_mapped',
-            'rel_abun'
+            prefix_name
         ])+"\n")
         for species in species_reads:
             relab = float(species_reads[species]) / float(total_reads)
             file_out.write("\t".join([
                 species.replace(' ','_'),
-                str(species_reads[species]),
                 str(relab)
             ])+"\n")
 

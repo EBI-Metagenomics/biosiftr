@@ -255,11 +255,21 @@ def species_writer( reps_list, all_kos, all_pfams, species_kos, species_pfams, o
 
 def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, output):
     # The first column has the gene_id
-    dram_header = ["", "fasta", "scaffold", "gene_position", "start_position", "end_position", 
-        "strandedness", "rank", "kegg_id", "kegg_hit", "peptidase_id", "peptidase_family",
-        "peptidase_hit", "peptidase_RBH", "peptidase_identity", "peptidase_bitScore", 
-        "peptidase_eVal", "pfam_hits", "cazy_hits", "vogdb_id", "vogdb_categories", 
-        "vogdb_hit", "heme_regulatory_motif_count", "bin_taxonomy"]
+    dram_header = [
+        "",
+        "fasta", 
+        "scaffold", 
+        "gene_position", 
+        "start_position", 
+        "end_position", 
+        "strandedness", 
+        "rank", 
+        "kegg_id", 
+        "kegg_hit", 
+        "pfam_hits", 
+        "cazy_best_hit", 
+        "bin_taxonomy",
+    ]
 
     with open(output+'_species_dram.tsv', 'w') as output_sp, \
         open(output+'_community_dram.tsv', 'w') as output_comm:
@@ -270,23 +280,10 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
             for gene_line in per_gene_dict[species_clstr]:
                 gene_info = {}
 
-                # Populating empty columns
-                gene_info["peptidase_id"] = ''
-                gene_info["peptidase_family"] = ''
-                gene_info["peptidase_hit"] = ''
-                gene_info["peptidase_RBH"] = ''
-                gene_info["peptidase_identity"] = ''
-                gene_info["peptidase_bitScore"] = ''
-                gene_info["peptidase_eVal"] = ''
-                gene_info["vogdb_id"] = ''
-                gene_info["vogdb_categories"] = ''
-                gene_info["vogdb_hit"] = ''
-                gene_info["heme_regulatory_motif_count"] = '0'
-
                 # Populating handy info
                 contig,gene_id,start,end,strand,kegg,pfam,cazy,core = gene_line.split('\t')
                 print(core)
-                gene_info["fasta"] = species_clstr
+                gene_info["fasta"] = species_clstr+'_clstr: '+taxonomy[species_clstr]
                 gene_info["scaffold"] = contig
                 gene_info["start_position"] = start
                 gene_info["end_position"] = end
@@ -298,24 +295,31 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                 # then the annotation is discarded to avoid passing depricated annotation to DRAM
                 rank = 'E'
                 if cazy == '-':
+                    #cazy_id = ''
                     cazy_hits = ''
                 else:
+                    #cazy_ids_list = []
                     cazy_desc_list = []
-                    for cazy_id in cazy.split(','):
-                        if cazy_id in dram_desc:
-                            for cazy_desc in dram_desc[cazy_id]:
+                    for cazy_acc in cazy.split(','):
+                        if cazy_acc in dram_desc:
+                            #cazy_ids_list.append(cazy_acc)
+                            for cazy_desc in dram_desc[cazy_acc]:
+                                if any([ cazy_desc.endswith(';'), cazy_desc.endswith('.') ]):
+                                    cazy_desc = cazy_desc[:-1]
                                 cazy_desc_list.append(cazy_desc)
                             last_element = cazy_desc_list.pop(-1)
-                            if any([ last_element.endswith(';'), last_element.endswith('.') ]):
-                                last_element = last_element[:-1]
-                            last_element = last_element + ' [' + cazy_id + ']'
+                            last_element = last_element + ' [' + cazy_acc + ']'
                             cazy_desc_list.append(last_element)
+
                     if len(cazy_desc_list) > 0:
-                        cazy_hits = ';'.join(cazy_desc_list)
+                        #cazy_id = '; '.join(cazy_ids_list)
+                        cazy_hits = '; '.join(cazy_desc_list)
                         rank = 'D'
                     else:
+                        #cazy_id = ''
                         cazy_hits = ''
-                gene_info["cazy_hits"] = cazy_hits
+                #gene_info["cazy_id"] = cazy_id
+                gene_info["cazy_best_hit"] = cazy_hits
 
                 if pfam == '-':
                     pfam_hits = ''
@@ -362,8 +366,8 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                     to_print.append(gene_info[header_key])
                 output_sp.write('\t'.join(to_print) + '\n')
 
-                gene_info["fasta"] = output
-                gene_info["bin_taxonomy"] = 'community:'+output
+                gene_info["fasta"] = 'community: '+output
+                gene_info["bin_taxonomy"] = '' 
                 to_print = []
                 to_print.append(gene_id)
                 for header_key in dram_header[1:]:
