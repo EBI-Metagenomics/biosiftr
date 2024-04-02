@@ -267,7 +267,7 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
         "kegg_id", 
         "kegg_hit", 
         "pfam_hits", 
-        "cazy_best_hit", 
+        "cazy_hits", 
         "bin_taxonomy",
     ]
 
@@ -295,14 +295,11 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                 # then the annotation is discarded to avoid passing depricated annotation to DRAM
                 rank = 'E'
                 if cazy == '-':
-                    #cazy_id = ''
                     cazy_hits = ''
                 else:
-                    #cazy_ids_list = []
                     cazy_desc_list = []
                     for cazy_acc in cazy.split(','):
                         if cazy_acc in dram_desc:
-                            #cazy_ids_list.append(cazy_acc)
                             for cazy_desc in dram_desc[cazy_acc]:
                                 if any([ cazy_desc.endswith(';'), cazy_desc.endswith('.') ]):
                                     cazy_desc = cazy_desc[:-1]
@@ -312,14 +309,11 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                             cazy_desc_list.append(last_element)
 
                     if len(cazy_desc_list) > 0:
-                        #cazy_id = '; '.join(cazy_ids_list)
                         cazy_hits = '; '.join(cazy_desc_list)
                         rank = 'D'
                     else:
-                        #cazy_id = ''
                         cazy_hits = ''
-                #gene_info["cazy_id"] = cazy_id
-                gene_info["cazy_best_hit"] = cazy_hits
+                gene_info["cazy_hits"] = cazy_hits
 
                 if pfam == '-':
                     pfam_hits = ''

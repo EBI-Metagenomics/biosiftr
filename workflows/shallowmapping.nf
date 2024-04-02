@@ -95,7 +95,7 @@ workflow SHALLOWMAPPING {
     // ---- Combine data into the reads channel ---- //
     groupReads = { list ->
         def meta = [id: list[0]]
-        def reads = list[1..-1]
+        def reads = list.drop(1).findAll { it.size() > 0 }
         if (reads.size() == 1) {
             return tuple(meta + [single_end: true], reads)
         }
@@ -104,7 +104,7 @@ workflow SHALLOWMAPPING {
         }
     }
     ch_reads = Channel.fromSamplesheet("input").map(groupReads) // [ meta, [raw_reads] ]
-
+    ch_reads.view()
 
     // ---- PREPROCESSING: Trimming, decontamination, and post-treatment qc ---- //
     FASTP ( ch_reads )
@@ -172,12 +172,18 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
 
     SM_COMM_KC( SM_FUNC.out.kegg_comm, 'sm' )
-    ch_versions = ch_versions.mix(SM_COMM_KC.out.versions.first())
+    //ch_versions = ch_versions.mix(SM_COMM_KC.out.versions.first())
 
     // ---- ANNOT INTEGRATOR: All samples matrices for taxo, kos, pfams, dram, and modules completeness ---- //
     INTEGRA_TAXO( POSTPROC_SOURMASHTAXO.out.sm_taxo.collect{ it[1] }, 'sm_taxo' )
+    ch_versions = ch_versions.mix(INTEGRA_TAXO.out.versions.first())
+
     INTEGRA_KO( SM_FUNC.out.kegg_comm.collect{ it[1] }, 'sm_kos' )
+    ch_versions = ch_versions.mix(INTEGRA_KO.out.versions.first())
+
     INTEGRA_PFAM( SM_FUNC.out.pfam_comm.collect{ it[1] }, 'sm_pfam' )
+    ch_versions = ch_versions.mix(INTEGRA_PFAM.out.versions.first())
+
     INTEGRA_MODU( SM_COMM_KC.out.kegg_comp.collect{ it[1] }, 'sm_modules' )
     ch_versions = ch_versions.mix(INTEGRA_MODU.out.versions.first())
 
@@ -204,7 +210,7 @@ workflow SHALLOWMAPPING {
             ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
 
             BWA_SPEC_KC( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', params.kegg_comp_db )
-            ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
+            //ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
 
         } else {
             BWA_FUNC( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', params.pangenome_db, params.dram_dbs )
@@ -223,8 +229,14 @@ workflow SHALLOWMAPPING {
 
         // ---- ANNOT INTEGRATOR: All samples matrices for taxo, kos, pfams, dram, and modules completeness ---- //
         BWA_INT_TAXO( POSTPROC_BWATAXO.out.bwa_taxo.collect{ it[1] }, 'bwa_taxo' )
+        ch_versions = ch_versions.mix(BWA_INT_TAXO.out.versions.first())
+
         BWA_INT_KO( BWA_FUNC.out.kegg_comm.collect{ it[1] }, 'bwa_kos' )
+        ch_versions = ch_versions.mix(BWA_INT_KO.out.versions.first())
+
         BWA_INT_PFAM( BWA_FUNC.out.pfam_comm.collect{ it[1] }, 'bwa_pfam' )
+        ch_versions = ch_versions.mix(BWA_INT_PFAM.out.versions.first())
+
         BWA_INT_MODU( BWA_COMM_KC.out.kegg_comp.collect{ it[1] }, 'bwa_modules' )
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
 

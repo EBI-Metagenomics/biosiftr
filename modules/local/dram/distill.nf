@@ -3,10 +3,10 @@ process DRAM_DISTILL {
     label 'process_single'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/dram:1.4.6--pyhdfd78af_2':
-        'quay.io/biocontainers/dram:1.4.6--pyhdfd78af_2' }"
+        'https://depot.galaxyproject.org/singularity/dram:1.3.5--pyhdfd78af_0':
+        'quay.io/biocontainers/dram:1.3.5--pyhdfd78af_0' }"
 
-    containerOptions="--bind $params.dram_dbs/:/data/ --bind $params.dram_dbs/CONFIG:/usr/local/lib/python3.11/site-packages/mag_annotator/CONFIG"
+    containerOptions="--bind $params.dram_dbs/:/data/ --bind $params.dram_dbs/CONFIG:/usr/local/lib/python3.10/site-packages/mag_annotator/CONFIG"
 
 
     input:
@@ -15,8 +15,8 @@ process DRAM_DISTILL {
     val(in_type)    //species or community
 
     output:
-    tuple val(meta), path("*_dram.{html,tsv}"), emit: destill_out
-    path "versions.yml"                       , emit: versions
+    tuple val(meta), path("*_dram.*"), emit: destill_out
+    path "versions.yml"              , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -24,11 +24,11 @@ process DRAM_DISTILL {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.4.6' // WARN: dram has no option to print the tool version. This is the container version
+    def VERSION = '1.3.5' // WARN: dram has no option to print the tool version. This is the container version
 
     """
     if [[ "${in_type}" == "community" ]]; then
-        echo ",fasta,scaffold,gene_position,start_position,end_position,strandedness,rank,kegg_id,kegg_hit,pfam_hits,cazy_best_hit,bin_taxonomy" | sed 's/,/\t/g' > community_input.txt
+        echo ",fasta,scaffold,gene_position,start_position,end_position,strandedness,rank,kegg_id,kegg_hit,pfam_hits,cazy_hits,bin_taxonomy" | sed 's/,/\t/g' > community_input.txt
         cat $dram_summary >> community_input.txt  
         DRAM.py \\
             distill \\
@@ -54,12 +54,10 @@ process DRAM_DISTILL {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.4.6' // WARN: dram has no option to print the version of the tool
+    def VERSION = '1.3.5'
     """
-    touch ${prefix}_${tool}_${in_type}_stats.tsv
-    touch ${prefix}_${tool}_${in_type}_summary.xlsx
-    touch ${prefix}_${tool}_${in_type}.html
-    touch ${prefix}_${tool}_${in_type}.tsv
+    touch ${prefix}_${tool}_${in_type}_dram.html
+    touch ${prefix}_${tool}_${in_type}_dram.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

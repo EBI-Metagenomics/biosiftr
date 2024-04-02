@@ -28,7 +28,7 @@ process KEGG_COMPLETENESS {
         -o result \\
         $args
 
-    cat result.summary.kegg_pathways.tsv | awk -F '\t' '{print \$1 "|" \$3 "\t" \$2}' | sed '/^module_accession/d' >> ${prefix}_${tool}_community_kegg_modules_comp.tsv
+    awk -F '\t' '{print \$1 "|" \$3 "\t" \$2}' result.summary.kegg_pathways.tsv | sed '/^module_accession/d' >> ${prefix}_${tool}_community_kegg_modules_comp.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -39,7 +39,7 @@ process KEGG_COMPLETENESS {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.0'
+    def VERSION = '1.1'
     """
     touch ${prefix}_${tool}_community_kegg_modules_comp.tsv
 

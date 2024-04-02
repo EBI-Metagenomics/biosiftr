@@ -45,8 +45,8 @@ process KEGG_SPECIES {
     touch ${prefix}_${tool}_species_kegg_modules_comp.tsv
 
     cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            kegg_sp: $VERSION
-        END_VERSIONS
+    "${task.process}":
+        kegg_sp: $VERSION
+    END_VERSIONS
     """
 }
