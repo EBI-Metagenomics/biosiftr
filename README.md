@@ -29,84 +29,37 @@ The final output includes a species relative abundance table, Pfam and KEGG Orth
 </p>
 
 
-## Install and databases setup
+## Install and dependencies
+
+This workflow was built using [Nextflow](https://www.nextflow.io/) and follows the [nf-core guidelines](https://nf-co.re/docs/contributing/guidelines). It uses Singularity containers making installation trivial and results highly reproducible. To run the pipeline in your systme you need:
+
+- Install [Nextflow version >=21.10](https://www.nextflow.io/docs/latest/getstarted.html#installation)
+- Install [Singularity](https://github.com/apptainer/singularity/blob/master/INSTALL.md)
+
+Clone the Shallo-mapping pipeline github repo:
+
+```bash
+git clone https://github.com/EBI-Metagenomics/shallowmapping.git
+```
+
 
 ### Required reference databases for decontamination
 
-The first time you run the pipeline you need to put available the genome reference of human+phiX and the host (chicken or mouse) indexed for bwa-mem2. Already indexed reference genomes are hosted in the MGnify FTP site. To download, clone the repo and run the following commands:
+The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directory can already exists.
+
+Consider that decontamination reference genomes require ~15-20G of storage. 
+MGnify catalogue genomes db occupy ~1G.
 
 ```bash
 cd shallowmapping
-mkdir -p databases/reference_genomes && cd databases/reference_genomes
-
-# Downloading human+phiX reference genomes
-
-wget https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/human_phiX/human_phix_ref_bwamem2.tar.gz
-tar -xvf human_phix_ref_bwamem2.tar.gz
-mv bwamem2/* .
-rm -r bwamem2
-
-# Downloading the host genome. Replace $HOST by the name of the reference genome you are intend to download (e.g. chocken)
-
-wget https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/$HOST/$HOST_ref_bwamem2.tar.gz
-tar -xvf $HOST_ref_bwamem2.tar.gz
-mv bwamem2/* .
-rm -r bwamem2
+nextflow run scripts/dbs_setup.nf \
+   --biome  <CATALOGUE_ID> \       # Any of the available MGnify catalogue ID for which databases are available
+   --catalogues_path </PATH/> \    # You should have write permissions
+   --decont_refs_path </PATH/> \   # You should have write permissions
+   --download_bwa <true or false> default = `false`
 ```
 
-You can move the location of the databases and update the config files accordingly.
-
-
-#### MGnify genome catalogue databases
-In addition, if this is the first time you are running the pipeline with a specific biome, you need to download the precomputed databases from the corresponding MGnify genomes catalogue.
-
-Inside the databases create a directory named exactly as the Catalogue ID:
-`chicken-gut-v1-0-1`
-`mouse-gut-v1-0`
-
-```bash
-cd shallowmapping/databases/
-mkdir $CATALOGUE_ID && cd $CATALOGUE_ID
-
-# Downloading the catalogue metadata file. Replace $HOST for the name of the catalogue and $VERSION for the version you are intend to use as a reference
-
-wget https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$HOST/$VERSION/genomes-all_metadata.tsv 
-
-# Downloading the pangenome function tables
-
-wget https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$HOST/$VERSION/pangenome_functions/functional_profiles.tar.gz
-tar -xvf functional_profiles.tar.gz
-
-wget https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$HOST/$VERSION/pangenome_functions/kegg_completeness.tar.gz
-tar -xvf kegg_completeness.tar.gz
-
-# Downloading the representative genomes indexed for sourmash
-
-wget https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$HOST/$VERSION/sourmash_db_$HOST_$VERSION/sourmash_species_representatives_k51.sbt.zip
-
-```
-
-Running the pipeline using bwamem2 is optional. If you want to run the pipeline with this option you need to download the bwamem2 database for representative genomes as well:
-
-```bash
-wget https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/$BIOME_reps/$BIOME-$VERSION_bwamem2.tar.gz
-tar -cvf $BIOME-$VERSION_bwamem2.tar.gz
-mv $BIOME-$VERSION_bwamem2/* .
-rm -r $BIOME-$VERSION_bwamem2
-```
-
-#### External databases for DRAM
-
-```bash
-cd shallowmapping/databases/
-mkdir -p external_dbs/dram_distill_dbs && cd external_dbs/dram_distill_dbs
-wget https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/amg_database.tsv
-wget https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/etc_module_database.tsv
-wget https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/function_heatmap_form.tsv
-wget https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/genome_summary_form.tsv
-wget https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/module_step_form.tsv
-wget https://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.dat.gz
-```
+Running the pipeline using bwamem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. This database will occupy >15G of storage in your system.
 
 
 ### Usage
@@ -127,7 +80,7 @@ Now, you can run the pipeline using the minumum mandatory arguments:
 
 ```bash
 nextflow run /PATH/shallowmapping/main.nf \
-   --biome <chicken-gut-v1-0-1 or mouse-gut-v1-0> \
+   --biome <CATALOGUE_ID> \
    --input samplesheet.csv \
    --outdir <PROJECT_NAME> default = `results`
 ```
