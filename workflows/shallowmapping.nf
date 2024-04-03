@@ -30,10 +30,10 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 */
 
 // Preprocessing modules
-include { FASTQC                              } from '../modules/nf-core/fastqc/main'
+include { FASTP                               } from '../modules/local/fastp/main'
+include { FASTQC as FASTQC_DECONT             } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                             } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS         } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { FASTP                               } from '../modules/local/fastp/main'
 
 // Mapping modules
 include { SOURMASH_GATHER                     } from '../modules/nf-core/sourmash/gather/main'
@@ -72,9 +72,8 @@ include { DRAM_DISTILL as BWA_INT_DRAM        } from '../modules/local/dram/dist
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { READS_BWAMEM2_DECONTAMINATION as PHIX_DECONT  } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
-include { READS_BWAMEM2_DECONTAMINATION as HUMAN_DECONT } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
-include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONT  } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
+include { READS_BWAMEM2_DECONTAMINATION as HUMAN_PHIX_DECONT } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
+include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONT       } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
 
 
 /*
@@ -86,7 +85,6 @@ include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONT  } from '../subworkflows/
 def multiqc_report = []
 
 workflow SHALLOWMAPPING {
-
     ch_versions       = Channel.empty()
     ch_log            = Channel.empty()
     ch_multiqc_files  = Channel.empty()
@@ -104,91 +102,85 @@ workflow SHALLOWMAPPING {
         }
     }
     ch_reads = Channel.fromSamplesheet("input").map(groupReads) // [ meta, [raw_reads] ]
-    ch_reads.view()
+
 
     // ---- PREPROCESSING: Trimming, decontamination, and post-treatment qc ---- //
     FASTP ( ch_reads )
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
-    // Creating channel for decontamination with phix
-    phix_ref = Channel.fromPath("$params.reference_genomes_folder/phiX174*", checkIfExists: true).collect().map { db_files ->
-        [ [id: 'phiX174'], db_files ]
+    // Creating channel for decontamination with human + phix genomes
+    hp_ref = Channel.fromPath("$params.reference_genomes_folder/human_phix*", checkIfExists: true).collect().map { db_files ->
+        [ [id: 'human_phiX'], db_files ]
     }
-    PHIX_DECONT ( FASTP.out.reads, phix_ref )
-    ch_versions = ch_versions.mix(PHIX_DECONT.out.versions.first())
-
-    // Creating channel for decontamination with human
-    human_ref = Channel.fromPath("$params.reference_genomes_folder/hg38*", checkIfExists: true).collect().map { db_files ->
-        [ [id: 'hg38'], db_files ]
-    }
-    HUMAN_DECONT ( PHIX_DECONT.out.decontaminated_reads, human_ref )
-    ch_versions = ch_versions.mix(HUMAN_DECONT.out.versions.first())
+    HUMAN_PHIX_DECONT ( FASTP.out.reads, hp_ref )
+    ch_versions = ch_versions.mix(HUMAN_PHIX_DECONT.out.versions.first())
 
     // Creating channel for decontamination with host when biome != human
-    def host_name = params.biome.split('-')[0]
     if ('human' in params.biome) {
-        decont_reads = HUMAN_DECONT.out.decontaminated_reads
+        decont_reads = HUMAN_PHIX_DECONT.out.decontaminated_reads
     } else {
+        def host_name = params.biome.split('-')[0]
         host_ref = Channel.fromPath("$params.reference_genomes_folder/$host_name.*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name], db_files ]
         }
-        HOST_DECONT( HUMAN_DECONT.out.decontaminated_reads, host_ref )
+        HOST_DECONT ( HUMAN_PHIX_DECONT.out.decontaminated_reads, host_ref )
         decont_reads = HOST_DECONT.out.decontaminated_reads
         ch_versions = ch_versions.mix(HOST_DECONT.out.versions.first())
     }
 
+
     // QC report after decontamination
-    FASTQC ( decont_reads )
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    FASTQC_DECONT ( decont_reads )
+    ch_versions = ch_versions.mix(FASTQC_DECONT.out.versions.first())
 
 
     // ---- MAPPING READS with sourmash: sketch decont reads, mapping, and profiling ---- //
     // Sketching decontaminated reads and running mapping
-    SOURMASH_SKETCH( decont_reads )
+    SOURMASH_SKETCH ( decont_reads )
     ch_versions = ch_versions.mix(SOURMASH_SKETCH.out.versions.first())
 
-    SOURMASH_GATHER( SOURMASH_SKETCH.out.signatures, params.sourmash_db, false, false, false, false )
+    SOURMASH_GATHER ( SOURMASH_SKETCH.out.signatures, params.sourmash_db, false, false, false, false )
     ch_versions = ch_versions.mix(SOURMASH_GATHER.out.versions.first())
 
     // Processing sourmash mapping output: generating taxonomic and functional profiles
-    POSTPROC_SOURMASHTAXO( SOURMASH_GATHER.out.result, "$params.prefix_path/genomes-all_metadata.tsv" )
+    POSTPROC_SOURMASHTAXO ( SOURMASH_GATHER.out.result, "$params.prefix_path/genomes-all_metadata.tsv" )
     ch_versions = ch_versions.mix(POSTPROC_SOURMASHTAXO.out.versions.first())    
 
     if (params.core_mode) {
-        SM_FUNC( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', params.pangenome_db, params.dram_dbs )
+        SM_FUNC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', params.pangenome_db, params.dram_dbs )
         ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
 
-        SM_SPEC_KC( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', params.kegg_comp_db )
+        SM_SPEC_KC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', params.kegg_comp_db )
         ch_versions = ch_versions.mix(SM_SPEC_KC.out.versions.first())
     } else {
-        SM_FUNC( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', params.pangenome_db, params.dram_dbs )
+        SM_FUNC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', params.pangenome_db, params.dram_dbs )
         ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
 
-        SM_SPEC_KC( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', params.kegg_comp_db )
+        SM_SPEC_KC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', params.kegg_comp_db )
         ch_versions = ch_versions.mix(SM_SPEC_KC.out.versions.first())
     }
 
-    SM_DRAM( SM_FUNC.out.dram_spec, 'sm', 'species')
+    SM_DRAM ( SM_FUNC.out.dram_spec, 'sm', 'species')
     ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
 
-    SM_COMM_KC( SM_FUNC.out.kegg_comm, 'sm' )
+    SM_COMM_KC ( SM_FUNC.out.kegg_comm, 'sm' )
     //ch_versions = ch_versions.mix(SM_COMM_KC.out.versions.first())
 
     // ---- ANNOT INTEGRATOR: All samples matrices for taxo, kos, pfams, dram, and modules completeness ---- //
-    INTEGRA_TAXO( POSTPROC_SOURMASHTAXO.out.sm_taxo.collect{ it[1] }, 'sm_taxo' )
+    INTEGRA_TAXO ( POSTPROC_SOURMASHTAXO.out.sm_taxo.collect{ it[1] }, 'sm_taxo' )
     ch_versions = ch_versions.mix(INTEGRA_TAXO.out.versions.first())
 
-    INTEGRA_KO( SM_FUNC.out.kegg_comm.collect{ it[1] }, 'sm_kos' )
+    INTEGRA_KO ( SM_FUNC.out.kegg_comm.collect{ it[1] }, 'sm_kos' )
     ch_versions = ch_versions.mix(INTEGRA_KO.out.versions.first())
 
-    INTEGRA_PFAM( SM_FUNC.out.pfam_comm.collect{ it[1] }, 'sm_pfam' )
+    INTEGRA_PFAM ( SM_FUNC.out.pfam_comm.collect{ it[1] }, 'sm_pfam' )
     ch_versions = ch_versions.mix(INTEGRA_PFAM.out.versions.first())
 
-    INTEGRA_MODU( SM_COMM_KC.out.kegg_comp.collect{ it[1] }, 'sm_modules' )
+    INTEGRA_MODU ( SM_COMM_KC.out.kegg_comp.collect{ it[1] }, 'sm_modules' )
     ch_versions = ch_versions.mix(INTEGRA_MODU.out.versions.first())
 
     ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name:'dram_community.tsv', newLine: true){ it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
-    INTEGRA_DRAM( ch_dram_community, 'sm', 'community' )
+    INTEGRA_DRAM ( ch_dram_community, 'sm', 'community' )
     ch_versions = ch_versions.mix(INTEGRA_DRAM.out.versions.first())
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
@@ -196,52 +188,51 @@ workflow SHALLOWMAPPING {
         genomes_ref = Channel.fromPath("$params.bwa_db*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name ], db_files ]
         }
-        ALIGN_BWAMEM2( decont_reads, genomes_ref )
+        ALIGN_BWAMEM2 ( decont_reads, genomes_ref )
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
-        POSTPROC_BAM2COV( ALIGN_BWAMEM2.out.bam )
+        POSTPROC_BAM2COV ( ALIGN_BWAMEM2.out.bam )
         ch_versions = ch_versions.mix(POSTPROC_BAM2COV.out.versions.first())
 
-	POSTPROC_BWATAXO( POSTPROC_BAM2COV.out.cov_file, "$params.prefix_path/genomes-all_metadata.tsv" )
+	POSTPROC_BWATAXO ( POSTPROC_BAM2COV.out.cov_file, "$params.prefix_path/genomes-all_metadata.tsv" )
 	ch_versions = ch_versions.mix(POSTPROC_BWATAXO.out.versions.first())
 
         if (params.core_mode) {
-            BWA_FUNC( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', params.pangenome_db, params.dram_dbs )
+            BWA_FUNC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', params.pangenome_db, params.dram_dbs )
             ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
 
-            BWA_SPEC_KC( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', params.kegg_comp_db )
+            BWA_SPEC_KC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', params.kegg_comp_db )
             //ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
 
         } else {
-            BWA_FUNC( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', params.pangenome_db, params.dram_dbs )
+            BWA_FUNC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', params.pangenome_db, params.dram_dbs )
             ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
 
-            BWA_SPEC_KC( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', params.kegg_comp_db )
+            BWA_SPEC_KC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', params.kegg_comp_db )
             ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
-
         }
 
-        BWA_DRAM(BWA_FUNC.out.dram_spec, 'bwa', 'species')
+        BWA_DRAM (BWA_FUNC.out.dram_spec, 'bwa', 'species')
         ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
 
-        BWA_COMM_KC( BWA_FUNC.out.kegg_comm, 'bwa' )
+        BWA_COMM_KC ( BWA_FUNC.out.kegg_comm, 'bwa' )
         //ch_versions = ch_versions.mix(BWA_COMM_KC.out.versions.first())
 
-        // ---- ANNOT INTEGRATOR: All samples matrices for taxo, kos, pfams, dram, and modules completeness ---- //
-        BWA_INT_TAXO( POSTPROC_BWATAXO.out.bwa_taxo.collect{ it[1] }, 'bwa_taxo' )
+        // ---- ANNOT INTEGRATOR: Matrices for taxo, kos, pfams, dram, and modules completeness ---- //
+        BWA_INT_TAXO ( POSTPROC_BWATAXO.out.bwa_taxo.collect{ it[1] }, 'bwa_taxo' )
         ch_versions = ch_versions.mix(BWA_INT_TAXO.out.versions.first())
 
-        BWA_INT_KO( BWA_FUNC.out.kegg_comm.collect{ it[1] }, 'bwa_kos' )
+        BWA_INT_KO ( BWA_FUNC.out.kegg_comm.collect{ it[1] }, 'bwa_kos' )
         ch_versions = ch_versions.mix(BWA_INT_KO.out.versions.first())
 
-        BWA_INT_PFAM( BWA_FUNC.out.pfam_comm.collect{ it[1] }, 'bwa_pfam' )
+        BWA_INT_PFAM ( BWA_FUNC.out.pfam_comm.collect{ it[1] }, 'bwa_pfam' )
         ch_versions = ch_versions.mix(BWA_INT_PFAM.out.versions.first())
 
-        BWA_INT_MODU( BWA_COMM_KC.out.kegg_comp.collect{ it[1] }, 'bwa_modules' )
+        BWA_INT_MODU ( BWA_COMM_KC.out.kegg_comp.collect{ it[1] }, 'bwa_modules' )
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
 
         ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name:'dram_community.tsv', newLine: true){ it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
-        BWA_INT_DRAM( ch_bwa_dram_community, 'bwa', 'community' )
+        BWA_INT_DRAM ( ch_bwa_dram_community, 'bwa', 'community' )
         ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
     }
 
@@ -261,7 +252,7 @@ workflow SHALLOWMAPPING {
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{ it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{ it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_DECONT.out.zip.collect{ it[1] }.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),
