@@ -34,6 +34,7 @@ process KEGG_COMPLETENESS {
     "${task.process}":
         kegg_comm: $VERSION
     END_VERSIONS
+
     """
 
     stub:

@@ -52,14 +52,14 @@ MGnify catalogue genomes db occupy ~1G.
 
 ```bash
 cd shallowmapping
-nextflow run scripts/dbs_setup.nf \
-   --biome  <CATALOGUE_ID> \       # Any of the available MGnify catalogue ID for which databases are available
-   --catalogues_path </PATH/> \    # You should have write permissions
-   --decont_refs_path </PATH/> \   # You should have write permissions
-   --download_bwa <true or false> default = `false`
+bash bin/setup_script.sh \
+    --biome <CATALOGUE_ID> \ # Any of the available MGnify catalogue ID for which databases are available
+    --catalogue_dbs_path </path/to/catalogue_dbs> \ # Central location of shallow-mapping dbs. A directory with the biome name will be created
+    --decont_refs_path </path/to/decont_refs> \ # Central location of reference genomes for decontamination. Other bwamem2 databases can exist there
+    --download_bwa <true or false> default = `false`
 ```
 
-Running the pipeline using bwamem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. This database will occupy >15G of storage in your system.
+Running the pipeline using bwamem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. Consider that this database will occupy >15G of storage in your system.
 
 
 ### Usage
@@ -82,10 +82,14 @@ Now, you can run the pipeline using the minumum mandatory arguments:
 nextflow run /PATH/shallowmapping/main.nf \
    --biome <CATALOGUE_ID> \
    --input samplesheet.csv \
-   --outdir <PROJECT_NAME> default = `results`
+   --outdir <PROJECT_NAME> default = `results` \
+   --shallow_dbs_path </PATH/> \
+   --decont_reference_paths </PATH/>
 ```
 
 At the moment, the biome selection is limited to the precomputed databases available to downloading (chicken-gut-v1-0-1 and mouse-gut-v1-0). Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) under request by opening an issue in this repo.
+
+The central location for the databases can be set in the config file.
 
 
 Optional arguments includes:

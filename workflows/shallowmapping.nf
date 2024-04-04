@@ -24,6 +24,18 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 
 
 /*
+~~~~~~~~~~~~~~~~~
+    DBs
+~~~~~~~~~~~~~~~~~
+*/
+dram_dbs          = file("$params.shallow_dbs_path/external_dbs/dram_distill_dbs", checkIfExists: true)
+sourmash_db       = file("$params.shallow_dbs_path/$params.biome/sourmash_species_representatives_k51.sbt.zip", checkIfExists: true)
+bwa_db            = file("$params.shallow_dbs_path/$params.biome/bwa_reps.fa.*", checkIfExists: true)
+pangenome_db      = file("$params.shallow_dbs_path/$params.biome/functional_profiles_DB/", checkIfExists: true)
+kegg_comp_db      = file("$params.shallow_dbs_path/$params.biome/kegg_completeness_DB/", checkIfExists: true)
+
+
+/*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT MODULES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,7 +121,7 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
     // Creating channel for decontamination with human + phix genomes
-    hp_ref = Channel.fromPath("$params.reference_genomes_folder/human_phix*", checkIfExists: true).collect().map { db_files ->
+    hp_ref = Channel.fromPath("$params.decont_reference_paths/human_phix*", checkIfExists: true).collect().map { db_files ->
         [ [id: 'human_phiX'], db_files ]
     }
     HUMAN_PHIX_DECONT ( FASTP.out.reads, hp_ref )
@@ -120,7 +132,7 @@ workflow SHALLOWMAPPING {
         decont_reads = HUMAN_PHIX_DECONT.out.decontaminated_reads
     } else {
         def host_name = params.biome.split('-')[0]
-        host_ref = Channel.fromPath("$params.reference_genomes_folder/$host_name.*", checkIfExists: true).collect().map { db_files ->
+        host_ref = Channel.fromPath("$params.decont_reference_paths/$host_name.*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name], db_files ]
         }
         HOST_DECONT ( HUMAN_PHIX_DECONT.out.decontaminated_reads, host_ref )
@@ -139,29 +151,29 @@ workflow SHALLOWMAPPING {
     SOURMASH_SKETCH ( decont_reads )
     ch_versions = ch_versions.mix(SOURMASH_SKETCH.out.versions.first())
 
-    SOURMASH_GATHER ( SOURMASH_SKETCH.out.signatures, params.sourmash_db, false, false, false, false )
+    SOURMASH_GATHER ( SOURMASH_SKETCH.out.signatures, sourmash_db, false, false, false, false )
     ch_versions = ch_versions.mix(SOURMASH_GATHER.out.versions.first())
 
     // Processing sourmash mapping output: generating taxonomic and functional profiles
-    POSTPROC_SOURMASHTAXO ( SOURMASH_GATHER.out.result, "$params.prefix_path/genomes-all_metadata.tsv" )
+    POSTPROC_SOURMASHTAXO ( SOURMASH_GATHER.out.result, "$params.shallow_dbs_path/$params.biome/genomes-all_metadata.tsv" )
     ch_versions = ch_versions.mix(POSTPROC_SOURMASHTAXO.out.versions.first())    
 
     if (params.core_mode) {
-        SM_FUNC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', params.pangenome_db, params.dram_dbs )
+        SM_FUNC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', pangenome_db, dram_dbs )
         ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
 
-        SM_SPEC_KC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', params.kegg_comp_db )
+        SM_SPEC_KC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', kegg_comp_db )
         ch_versions = ch_versions.mix(SM_SPEC_KC.out.versions.first())
     } else {
-        SM_FUNC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', params.pangenome_db, params.dram_dbs )
+        SM_FUNC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', pangenome_db, dram_dbs )
         ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
 
-        SM_SPEC_KC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', params.kegg_comp_db )
-        ch_versions = ch_versions.mix(SM_SPEC_KC.out.versions.first())
+        SM_SPEC_KC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', kegg_comp_db )
+        //ch_versions = ch_versions.mix(SM_SPEC_KC.out.versions.first())
     }
 
-    SM_DRAM ( SM_FUNC.out.dram_spec, 'sm', 'species')
-    ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
+    //SM_DRAM ( SM_FUNC.out.dram_spec, 'sm', 'species')
+    //ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
 
     SM_COMM_KC ( SM_FUNC.out.kegg_comm, 'sm' )
     //ch_versions = ch_versions.mix(SM_COMM_KC.out.versions.first())
@@ -179,13 +191,13 @@ workflow SHALLOWMAPPING {
     INTEGRA_MODU ( SM_COMM_KC.out.kegg_comp.collect{ it[1] }, 'sm_modules' )
     ch_versions = ch_versions.mix(INTEGRA_MODU.out.versions.first())
 
-    ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name:'dram_community.tsv', newLine: true){ it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
-    INTEGRA_DRAM ( ch_dram_community, 'sm', 'community' )
-    ch_versions = ch_versions.mix(INTEGRA_DRAM.out.versions.first())
+    //ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name:'dram_community.tsv', newLine: true){ it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
+    //INTEGRA_DRAM ( ch_dram_community, 'sm', 'community' )
+    //ch_versions = ch_versions.mix(INTEGRA_DRAM.out.versions.first())
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
     if (params.run_bwa) {
-        genomes_ref = Channel.fromPath("$params.bwa_db*", checkIfExists: true).collect().map { db_files ->
+        genomes_ref = Channel.fromPath( bwa_db ).collect().map { db_files ->
         [ [id: host_name ], db_files ]
         }
         ALIGN_BWAMEM2 ( decont_reads, genomes_ref )
@@ -194,22 +206,22 @@ workflow SHALLOWMAPPING {
         POSTPROC_BAM2COV ( ALIGN_BWAMEM2.out.bam )
         ch_versions = ch_versions.mix(POSTPROC_BAM2COV.out.versions.first())
 
-	POSTPROC_BWATAXO ( POSTPROC_BAM2COV.out.cov_file, "$params.prefix_path/genomes-all_metadata.tsv" )
+	POSTPROC_BWATAXO ( POSTPROC_BAM2COV.out.cov_file, "$params.shallow_dbs_path/$params.biome/genomes-all_metadata.tsv" )
 	ch_versions = ch_versions.mix(POSTPROC_BWATAXO.out.versions.first())
 
         if (params.core_mode) {
-            BWA_FUNC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', params.pangenome_db, params.dram_dbs )
+            BWA_FUNC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', pangenome_db, dram_dbs )
             ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
 
-            BWA_SPEC_KC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', params.kegg_comp_db )
+            BWA_SPEC_KC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', kegg_comp_db )
             //ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
 
         } else {
-            BWA_FUNC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', params.pangenome_db, params.dram_dbs )
+            BWA_FUNC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', pangenome_db, dram_dbs )
             ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
 
-            BWA_SPEC_KC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', params.kegg_comp_db )
-            ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
+            BWA_SPEC_KC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', kegg_comp_db )
+            //ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
         }
 
         BWA_DRAM (BWA_FUNC.out.dram_spec, 'bwa', 'species')
