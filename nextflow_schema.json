@@ -10,7 +10,9 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "outdir"],
+            "required": [
+                "input"
+            ],
             "properties": {
                 "input": {
                     "type": "string",
@@ -18,7 +20,7 @@
                     "exists": true,
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
-		    "schema": "assets/schema_input.json",
+                    "schema": "assets/schema_input.json",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
                     "fa_icon": "fas fa-file-csv"
@@ -27,7 +29,8 @@
                     "type": "string",
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
-                    "fa_icon": "fas fa-folder-open"
+                    "fa_icon": "fas fa-folder-open",
+                    "default": "results"
                 },
                 "email": {
                     "type": "string",
@@ -40,7 +43,8 @@
                 "multiqc_title": {
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
-                    "fa_icon": "fas fa-file-signature"
+                    "fa_icon": "fas fa-file-signature",
+                    "hidden": true
                 }
             }
         },
@@ -104,7 +108,14 @@
                     "description": "Method used to save pipeline results to output directory.",
                     "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
                     "fa_icon": "fas fa-copy",
-                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
+                    "enum": [
+                        "symlink",
+                        "rellink",
+                        "link",
+                        "copy",
+                        "copyNoFollow",
+                        "move"
+                    ],
                     "hidden": true
                 },
                 "email_on_fail": {
@@ -158,7 +169,8 @@
                 "multiqc_methods_description": {
                     "type": "string",
                     "description": "Custom MultiQC yaml file containing HTML including a methods description.",
-                    "fa_icon": "fas fa-cog"
+                    "fa_icon": "fas fa-cog",
+                    "hidden": true
                 },
                 "validate_params": {
                     "type": "boolean",
@@ -206,40 +218,14 @@
         "biome": {
             "type": "string",
             "description": "This can be any of the MGnify catalogues for which shallow-mapping databases are currently available",
-	    "enum": [ 
-                "chicken-gut-v1-0-1", 
-                "mouse-gut-v1-0" 
+            "enum": [
+                "chicken-gut-v1-0-1",
+                "mouse-gut-v1-0"
             ]
         },
         "run_bwa": {
             "type": "boolean",
-            "default": false,
             "description": "Generate extra results of taxonomic and functional profiles using bwa-mem2"
-        },
-        "sourmash_db": {
-            "type": "string",
-            "default": "databases/null/sourmash_reps_k51.sbt.zip",
-            "description": "Sourmash database of representative genomes (kmer=51)"
-        },
-        "bwa_db": {
-            "type": "string",
-            "default": "databases/null/bwa_reps.fa",
-            "description": "BWA database of representative genomes"
-        },
-        "pangenome_db": {
-            "type": "string",
-            "default": "databases/null/functional_profiles_DB/",
-            "description": "Precomputed tables of pangenomic functions"
-        },
-        "host_ref": {
-            "type": "string",
-            "default": "databases/null/host.fa",
-            "description": "Reference genome of the host indexed for bwa-mem2 for raw-reads decontamination"
-        },
-        "human_ref": {
-            "type": "string",
-            "default": "databases/human_db/hg38.fa",
-            "description": "Reference genome of human indexed for bwa-mem2 for raw-reads decontamination"
         },
         "workdir": {
             "type": "string",
@@ -250,7 +236,20 @@
             "type": "string",
             "default": "/hps/nobackup/rdf/metagenomics/service-team/singularity-cache/",
             "description": "Location to store singularity images"
+        },
+        "core_mode": {
+            "type": "boolean"
+        },
+        "shallow_dbs_path": {
+            "type": "string"
+        },
+        "decont_reference_paths": {
+            "type": "string"
         }
     },
-    "required": ["biome"]
+    "required": [
+        "biome",
+        "shallow_dbs_path",
+        "decont_reference_paths"
+    ]
 }
