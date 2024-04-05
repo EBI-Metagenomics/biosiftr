@@ -140,11 +140,11 @@ echo '{"description_db": "None", "kegg": null, "kofam": null, "kofam_ko_list": n
 
 
 echo " ***  Databases setting up finished successfully for $BIOME"
-echo " ***  Use the following parameters to run the shallow-mapping pipeline:"
-echo "      nextflow run shallowmapping/main.nf \\"
+echo " ***  Use the following parameters to test the shallow-mapping pipeline from shallowmapping/test:"
+echo "      nextflow run ../main.nf \\"
 echo "          --biome $BIOME \\"
-echo "          --input your_samplesheet.csv \\"
-echo "          --outdir your_outdir \\"
+echo "          --input test_samplesheet.csv \\"
+echo "          --outdir test_output \\"
 echo "          --shallow_dbs_path $CATALOGUE_DBS_PATH \\"
 echo "          --decont_reference_paths ${DECONT_REFS_PATH}reference_genomes"
 

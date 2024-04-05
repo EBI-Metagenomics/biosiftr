@@ -191,9 +191,9 @@ workflow SHALLOWMAPPING {
     INTEGRA_MODU ( SM_COMM_KC.out.kegg_comp.collect{ it[1] }, 'sm_modules' )
     ch_versions = ch_versions.mix(INTEGRA_MODU.out.versions.first())
 
-    //ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name:'dram_community.tsv', newLine: true){ it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
-    //INTEGRA_DRAM ( ch_dram_community, 'sm', 'community' )
-    //ch_versions = ch_versions.mix(INTEGRA_DRAM.out.versions.first())
+    ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name:'dram_community.tsv', newLine: true){ it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
+    INTEGRA_DRAM ( ch_dram_community, 'sm', 'community' )
+    ch_versions = ch_versions.mix(INTEGRA_DRAM.out.versions.first())
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
     if (params.run_bwa) {
@@ -224,8 +224,8 @@ workflow SHALLOWMAPPING {
             //ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
         }
 
-        //BWA_DRAM (BWA_FUNC.out.dram_spec, 'bwa', 'species')
-        //ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
+        BWA_DRAM (BWA_FUNC.out.dram_spec, 'bwa', 'species')
+        ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
 
         BWA_COMM_KC ( BWA_FUNC.out.kegg_comm, 'bwa' )
         //ch_versions = ch_versions.mix(BWA_COMM_KC.out.versions.first())
@@ -244,8 +244,8 @@ workflow SHALLOWMAPPING {
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
 
         ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name:'dram_community.tsv', newLine: true){ it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
-        //BWA_INT_DRAM ( ch_bwa_dram_community, 'bwa', 'community' )
-        //ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
+        BWA_INT_DRAM ( ch_bwa_dram_community, 'bwa', 'community' )
+        ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
     }
 
 

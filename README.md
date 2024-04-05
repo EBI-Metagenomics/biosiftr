@@ -102,6 +102,18 @@ Use `--core_mode true` for large catalogues like the mouse-gut to avoid over-pre
 Nextflow option `-profile` can be use to select a suitable config for your computational resources.
 Nextflow option `-resume` can be use to re-run the pipeline from the last successfully finished step. 
 
+### Test
+Once the databases has been set up, you can tun a test with the provided dataset from shallowmapping/test
+
+```bash
+nextflow run ../main.nf \
+    --biome BIOME \
+    --input test_samplesheet.csv \
+    --outdir test_output \
+    --shallow_dbs_path CATALOGUE_DBS_PATH \
+    --decont_reference_paths DECONT_REFS_PATH/reference_genomes
+```
+
 
 ## Credits
 

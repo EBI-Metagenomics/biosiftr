@@ -281,8 +281,7 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                 gene_info = {}
 
                 # Populating handy info
-                contig,gene_id,start,end,strand,kegg,pfam,cazy,core = gene_line.split('\t')
-                print(core)
+                contig,gene_id,start,end,strand,kegg,cazy,pfam,core = gene_line.split('\t')
                 gene_info["fasta"] = species_clstr+'_clstr: '+taxonomy[species_clstr]
                 gene_info["scaffold"] = contig
                 gene_info["start_position"] = start
@@ -361,7 +360,7 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                 output_sp.write('\t'.join(to_print) + '\n')
 
                 gene_info["fasta"] = 'community: '+output
-                gene_info["bin_taxonomy"] = '' 
+                gene_info["bin_taxonomy"] = 'community: '+output 
                 to_print = []
                 to_print.append(gene_id)
                 for header_key in dram_header[1:]:
