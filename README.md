@@ -31,12 +31,12 @@ The final output includes a species relative abundance table, Pfam and KEGG Orth
 
 ## Install and dependencies
 
-This workflow was built using [Nextflow](https://www.nextflow.io/) and follows the [nf-core guidelines](https://nf-co.re/docs/contributing/guidelines). It uses Singularity containers making installation trivial and results highly reproducible. To run the pipeline in your systme you need:
+This workflow was built using [Nextflow](https://www.nextflow.io/) and follows the [nf-core guidelines](https://nf-co.re/docs/contributing/guidelines). It uses Singularity containers making installation trivial and results highly reproducible. To run the pipeline in your system you need:
 
 - Install [Nextflow version >=21.10](https://www.nextflow.io/docs/latest/getstarted.html#installation)
 - Install [Singularity](https://github.com/apptainer/singularity/blob/master/INSTALL.md)
 
-Clone the Shallo-mapping pipeline github repo:
+Clone the Shallow-mapping pipeline github repo:
 
 ```bash
 git clone https://github.com/EBI-Metagenomics/shallowmapping.git
@@ -45,7 +45,7 @@ git clone https://github.com/EBI-Metagenomics/shallowmapping.git
 
 ### Required reference databases for decontamination
 
-The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directory can already exists.
+The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to already exists.
 
 Consider that decontamination reference genomes require ~15-20G of storage. 
 MGnify catalogue genomes db occupy ~1G.
@@ -53,7 +53,7 @@ MGnify catalogue genomes db occupy ~1G.
 ```bash
 cd shallowmapping
 bash bin/setup_script.sh \
-    --biome <CATALOGUE_ID> \ # Any of the available MGnify catalogue ID for which databases are available
+    --biome <CATALOGUE_ID> \ # Any of the MGnify catalogue ID for which databases are available
     --catalogue_dbs_path </path/to/catalogue_dbs> \ # Central location of shallow-mapping dbs. A directory with the biome name will be created
     --decont_refs_path </path/to/decont_refs> \ # Central location of reference genomes for decontamination. Other bwamem2 databases can exist there
     --download_bwa <true or false> default = `false`

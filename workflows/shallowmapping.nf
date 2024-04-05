@@ -128,10 +128,10 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(HUMAN_PHIX_DECONT.out.versions.first())
 
     // Creating channel for decontamination with host when biome != human
+    def host_name = params.biome.split('-')[0]
     if ('human' in params.biome) {
         decont_reads = HUMAN_PHIX_DECONT.out.decontaminated_reads
     } else {
-        def host_name = params.biome.split('-')[0]
         host_ref = Channel.fromPath("$params.decont_reference_paths/$host_name.*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name], db_files ]
         }
@@ -224,8 +224,8 @@ workflow SHALLOWMAPPING {
             //ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
         }
 
-        BWA_DRAM (BWA_FUNC.out.dram_spec, 'bwa', 'species')
-        ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
+        //BWA_DRAM (BWA_FUNC.out.dram_spec, 'bwa', 'species')
+        //ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
 
         BWA_COMM_KC ( BWA_FUNC.out.kegg_comm, 'bwa' )
         //ch_versions = ch_versions.mix(BWA_COMM_KC.out.versions.first())
@@ -244,8 +244,8 @@ workflow SHALLOWMAPPING {
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
 
         ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name:'dram_community.tsv', newLine: true){ it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
-        BWA_INT_DRAM ( ch_bwa_dram_community, 'bwa', 'community' )
-        ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
+        //BWA_INT_DRAM ( ch_bwa_dram_community, 'bwa', 'community' )
+        //ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
     }
 
 
