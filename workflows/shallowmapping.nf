@@ -172,8 +172,8 @@ workflow SHALLOWMAPPING {
         //ch_versions = ch_versions.mix(SM_SPEC_KC.out.versions.first())
     }
 
-    //SM_DRAM ( SM_FUNC.out.dram_spec, 'sm', 'species')
-    //ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
+    SM_DRAM ( SM_FUNC.out.dram_spec, 'sm', 'species')
+    ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
 
     SM_COMM_KC ( SM_FUNC.out.kegg_comm, 'sm' )
     //ch_versions = ch_versions.mix(SM_COMM_KC.out.versions.first())

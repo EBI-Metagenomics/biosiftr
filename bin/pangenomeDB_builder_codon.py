@@ -327,12 +327,12 @@ def acc_eggnog_parser( eggnog_annot, accesory_genes, acc_gff_dict, pfam_desc ):
             acc_gff_dict[gene].append(kegg_annot[pan_gene])
         else:
             acc_gff_dict[gene].append('-')
-        if pan_gene in pfam_annot:
-            acc_gff_dict[gene].append(pfam_annot[pan_gene])
-        else:
-            acc_gff_dict[gene].append('-')
         if pan_gene in cazy_annot:
             acc_gff_dict[gene].append(cazy_annot[pan_gene])
+        else:
+            acc_gff_dict[gene].append('-')
+        if pan_gene in pfam_annot:
+            acc_gff_dict[gene].append(pfam_annot[pan_gene])
         else:
             acc_gff_dict[gene].append('-')
     return(acc_gff_dict)
@@ -349,8 +349,8 @@ def output_writer( gff_dict, rep, clstr_size, core_mgygs ):
             'end',
             'strand',
             'kegg',
-            'pfam',
             'cazy',
+            'pfam',
             'core'
         ])+'\n')
         for gene in gff_dict:

@@ -36,7 +36,7 @@ def aggregate_species( sm_csv, ref_spec_genome, out_name ):
         for line in input_file:
             l_line = line.rstrip().split(',')
             f_unique_weighted = l_line[4]
-            name = l_line[9].split('_')[0]
+            name = l_line[9]
 
             if name in ref_spec_genome:
                 lineage  = ref_spec_genome[name]

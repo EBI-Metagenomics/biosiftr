@@ -6,8 +6,7 @@ process DRAM_DISTILL {
         'https://depot.galaxyproject.org/singularity/dram:1.3.5--pyhdfd78af_0':
         'quay.io/biocontainers/dram:1.3.5--pyhdfd78af_0' }"
 
-    containerOptions="--bind $params.dram_dbs/:/data/ --bind $params.dram_dbs/CONFIG:/usr/local/lib/python3.10/site-packages/mag_annotator/CONFIG"
-
+    containerOptions="--bind $params.shallow_dbs_path/external_dbs/dram_distill_dbs/:/data/ --bind $params.shallow_dbs_path/external_dbs/dram_distill_dbs/CONFIG:/usr/local/lib/python3.10/site-packages/mag_annotator/CONFIG"
 
     input:
     tuple val(meta), path(dram_summary)

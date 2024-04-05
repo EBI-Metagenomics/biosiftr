@@ -87,7 +87,7 @@ def functions_finder_pan( reps_list, db_path ):
             next(input_file)
             for line in input_file:
                 per_gene_dict[rep_genome].append(line.rstrip())
-                contig,gene_id,start,end,strand,kegg,pfam,cazy,core = line.rstrip().split('\t')
+                contig,gene_id,start,end,strand,kegg,cazy,pfam,core = line.rstrip().split('\t')
 
                 if contig not in positions:
                     positions[contig] = {}
@@ -158,7 +158,7 @@ def functions_finder_core( reps_list, db_path ):
             next(input_file)
             next(input_file)
             for line in input_file:
-                contig,gene_id,start,end,strand,kegg,pfam,cazy,core = line.rstrip().split('\t')
+                contig,gene_id,start,end,strand,kegg,cazy,pfam,core = line.rstrip().split('\t')
 
                 if contig not in positions:
                     positions[contig] = {}

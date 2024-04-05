@@ -134,6 +134,11 @@ else
     wget --continue "https://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.dat.gz"
 fi
 
+# Creating the CONFIG file for DRAM distill
+echo " ***  Creating the CONFIG file for DRAM distill"
+echo '{"description_db": "None", "kegg": null, "kofam": null, "kofam_ko_list": null, "uniref": null, "pfam": null, "pfam_hmm_dat": null, "dbcan": null, "dbcan_fam_activities": null, "viral": null, "peptidase": null, "vogdb": null, "vog_annotations": null, "genome_summary_form": "/data/genome_summary_form.tsv", "module_step_form": "/data/module_step_form.tsv", "etc_module_database": "/data/etc_module_database.tsv", "function_heatmap_form": "/data/function_heatmap_form.tsv", "amg_database": "/data/amg_database.tsv"}' > CONFIG
+
+
 echo " ***  Databases setting up finished successfully for $BIOME"
 echo " ***  Use the following parameters to run the shallow-mapping pipeline:"
 echo "      nextflow run shallowmapping/main.nf \\"
