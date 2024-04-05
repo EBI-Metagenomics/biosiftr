@@ -103,7 +103,7 @@ Nextflow option `-profile` can be use to select a suitable config for your compu
 Nextflow option `-resume` can be use to re-run the pipeline from the last successfully finished step. 
 
 ### Test
-Once the databases has been set up, you can tun a test with the provided dataset from shallowmapping/test
+Once the databases has been set up, you can run a test with the provided dataset from shallowmapping/test
 
 ```bash
 nextflow run ../main.nf \
