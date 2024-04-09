@@ -78,14 +78,9 @@ include { POSTPROC_INTEGRATOR as BWA_INT_MODU } from '../modules/local/postproc/
 include { DRAM_DISTILL as BWA_INT_DRAM        } from '../modules/local/dram/distill'
 
 
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
 
-include { READS_BWAMEM2_DECONTAMINATION as HUMAN_PHIX_DECONT } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
-include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONT       } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
+//include { READS_BWAMEM2_DECONTAMINATION as HUMAN_PHIX_DECONT } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
+//include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONT       } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
 
 
 /*
