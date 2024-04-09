@@ -126,11 +126,11 @@ if [ -d "external_dbs" ]; then
 else
     echo " ***  Downloading external dbs to $CATALOGUE_DBS_PATH/external_dbs/dram_distill_dbs"
     mkdir -p external_dbs/dram_distill_dbs && cd external_dbs/dram_distill_dbs || exit
-    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/amg_database.tsv"
-    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/etc_module_database.tsv"
-    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/function_heatmap_form.tsv"
-    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/genome_summary_form.tsv"
-    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/master/data/module_step_form.tsv"
+    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/v1.5.0/data/amg_database.tsv"
+    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/v1.5.0/data/etc_module_database.tsv"
+    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/v1.5.0/data/function_heatmap_form.tsv"
+    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/v1.5.0/data/genome_summary_form.tsv"
+    wget --continue "https://raw.githubusercontent.com/WrightonLabCSU/DRAM/v1.5.0/data/module_step_form.tsv"
     wget --continue "https://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.dat.gz"
 fi
 

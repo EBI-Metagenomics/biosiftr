@@ -42,27 +42,29 @@ kegg_comp_db      = file("$params.shallow_dbs_path/$params.biome/kegg_completene
 */
 
 // Preprocessing modules
-include { FASTP                               } from '../modules/local/fastp/main'
-include { FASTQC as FASTQC_DECONT             } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                             } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS         } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { FASTP                                    } from '../modules/local/fastp/main'
+include { BWAMEM2DECONTNOBAMS as HUMAN_PHIX_DECONT } from '../modules/ebi-metagenomics/bwamem2decontnobams/main'
+include { BWAMEM2DECONTNOBAMS as HOST_DECONT       } from '../modules/ebi-metagenomics/bwamem2decontnobams/main'
+include { FASTQC as FASTQC_DECONT                  } from '../modules/nf-core/fastqc/main'
+include { MULTIQC                                  } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS              } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 // Mapping modules
-include { SOURMASH_GATHER                     } from '../modules/nf-core/sourmash/gather/main'
-include { SOURMASH_SKETCH                     } from '../modules/nf-core/sourmash/sketch/main'
-include { POSTPROC_SOURMASHTAXO               } from '../modules/local/postproc/sourmashtaxo'
-include { POSTPROC_FUNCTIONSPRED as SM_FUNC   } from '../modules/local/postproc/functionspred'
-include { DRAM_DISTILL as SM_DRAM             } from '../modules/local/dram/distill'
-include { KEGG_COMPLETENESS as SM_COMM_KC     } from '../modules/local/kegg/completeness'
-include { KEGG_SPECIES as SM_SPEC_KC          } from '../modules/local/kegg/species'
+include { SOURMASH_GATHER                   } from '../modules/nf-core/sourmash/gather/main'
+include { SOURMASH_SKETCH                   } from '../modules/nf-core/sourmash/sketch/main'
+include { POSTPROC_SOURMASHTAXO             } from '../modules/local/postproc/sourmashtaxo'
+include { POSTPROC_FUNCTIONSPRED as SM_FUNC } from '../modules/local/postproc/functionspred'
+include { DRAM_DISTILL as SM_DRAM           } from '../modules/local/dram/distill'
+include { KEGG_COMPLETENESS as SM_COMM_KC   } from '../modules/local/kegg/completeness'
+include { KEGG_SPECIES as SM_SPEC_KC        } from '../modules/local/kegg/species'
 
-include { ALIGN_BWAMEM2                       } from '../modules/local/align/bwamem2'
-include { POSTPROC_BAM2COV                    } from '../modules/local/postproc/bam2cov'
-include { POSTPROC_BWATAXO                    } from '../modules/local/postproc/bwataxo'
-include { POSTPROC_FUNCTIONSPRED as BWA_FUNC  } from '../modules/local/postproc/functionspred'
-include { DRAM_DISTILL as BWA_DRAM            } from '../modules/local/dram/distill'
-include { KEGG_COMPLETENESS as BWA_COMM_KC    } from '../modules/local/kegg/completeness'
-include { KEGG_SPECIES as BWA_SPEC_KC         } from '../modules/local/kegg/species'
+include { ALIGN_BWAMEM2                      } from '../modules/local/align/bwamem2'
+include { POSTPROC_BAM2COV                   } from '../modules/local/postproc/bam2cov'
+include { POSTPROC_BWATAXO                   } from '../modules/local/postproc/bwataxo'
+include { POSTPROC_FUNCTIONSPRED as BWA_FUNC } from '../modules/local/postproc/functionspred'
+include { DRAM_DISTILL as BWA_DRAM           } from '../modules/local/dram/distill'
+include { KEGG_COMPLETENESS as BWA_COMM_KC   } from '../modules/local/kegg/completeness'
+include { KEGG_SPECIES as BWA_SPEC_KC        } from '../modules/local/kegg/species'
 
 // Community results integration
 include { POSTPROC_INTEGRATOR as INTEGRA_TAXO } from '../modules/local/postproc/integrator'
@@ -76,12 +78,6 @@ include { POSTPROC_INTEGRATOR as BWA_INT_KO   } from '../modules/local/postproc/
 include { POSTPROC_INTEGRATOR as BWA_INT_PFAM } from '../modules/local/postproc/integrator'
 include { POSTPROC_INTEGRATOR as BWA_INT_MODU } from '../modules/local/postproc/integrator'
 include { DRAM_DISTILL as BWA_INT_DRAM        } from '../modules/local/dram/distill'
-
-
-
-//include { READS_BWAMEM2_DECONTAMINATION as HUMAN_PHIX_DECONT } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
-//include { READS_BWAMEM2_DECONTAMINATION as HOST_DECONT       } from '../subworkflows/ebi-metagenomics/reads_bwamem2_decontamination/main'
-
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,25 +121,26 @@ workflow SHALLOWMAPPING {
     // Creating channel for decontamination with host when biome != human
     def host_name = params.biome.split('-')[0]
     if ('human' in params.biome) {
-        decont_reads = HUMAN_PHIX_DECONT.out.decontaminated_reads
+        hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
     } else {
         host_ref = Channel.fromPath("$params.decont_reference_paths/$host_name.*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name], db_files ]
         }
-        HOST_DECONT ( HUMAN_PHIX_DECONT.out.decontaminated_reads, host_ref )
-        decont_reads = HOST_DECONT.out.decontaminated_reads
+
+        HOST_DECONT ( HUMAN_PHIX_DECONT.out.decont_reads, host_ref )
+        hq_reads = HOST_DECONT.out.decont_reads
         ch_versions = ch_versions.mix(HOST_DECONT.out.versions.first())
     }
 
 
     // QC report after decontamination
-    FASTQC_DECONT ( decont_reads )
+    FASTQC_DECONT ( hq_reads )
     ch_versions = ch_versions.mix(FASTQC_DECONT.out.versions.first())
 
 
     // ---- MAPPING READS with sourmash: sketch decont reads, mapping, and profiling ---- //
     // Sketching decontaminated reads and running mapping
-    SOURMASH_SKETCH ( decont_reads )
+    SOURMASH_SKETCH ( hq_reads )
     ch_versions = ch_versions.mix(SOURMASH_SKETCH.out.versions.first())
 
     SOURMASH_GATHER ( SOURMASH_SKETCH.out.signatures, sourmash_db, false, false, false, false )
@@ -195,7 +192,7 @@ workflow SHALLOWMAPPING {
         genomes_ref = Channel.fromPath( bwa_db ).collect().map { db_files ->
         [ [id: host_name ], db_files ]
         }
-        ALIGN_BWAMEM2 ( decont_reads, genomes_ref )
+        ALIGN_BWAMEM2 ( hq_reads, genomes_ref )
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
         POSTPROC_BAM2COV ( ALIGN_BWAMEM2.out.bam )
