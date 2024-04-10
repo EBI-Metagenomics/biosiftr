@@ -7,7 +7,7 @@
                 "ebi-metagenomics": {
                     "bwamem2decontnobams": {
                         "branch": "main",
-                        "git_sha": "fa97e0d9ffee0c50d98da9e1d6c95f965b914a88",
+                        "git_sha": "32049180387cf2406254acf57882fc55915cb52e",
                         "installed_by": ["modules"]
                     }
                 }
