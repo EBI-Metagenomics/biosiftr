@@ -39,7 +39,7 @@ git clone https://github.com/EBI-Metagenomics/shallowmapping.git
 
 ### Required reference databases
 
-The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to already exists.
+The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to already exists. Please provide full paths.
 
 Consider that decontamination reference genomes require ~15-20G of storage. 
 MGnify catalogue genomes db occupy ~1G.
