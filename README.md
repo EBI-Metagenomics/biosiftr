@@ -19,7 +19,7 @@ The main sections of the pipeline includes the following steps:
 The final output includes a species relative abundance table, Pfam and KEGG Orthologs (KO) count tables, a KEGG modules completeness table, and DRAM-style visuals. In addition, the shallow-mapping pipeline will integrate the taxonomic and functional tables of all the samples in the input samplesheet.
 
 <p align="center" width="100%">
-   <img src="docs/images/workflow.png" width="90%"/>
+   <img src="images/workflow.png" width="90%"/>
 </p>
 
 
