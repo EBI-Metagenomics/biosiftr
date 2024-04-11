@@ -37,7 +37,7 @@ git clone https://github.com/EBI-Metagenomics/shallowmapping.git
 ```
 
 
-### Required reference databases for decontamination
+### Required reference databases
 
 The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to already exists.
 
@@ -70,18 +70,18 @@ single_sample,/PATH/test.fq.gz
 
 Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
 
-Now, you can run the pipeline using the minumum mandatory arguments:
+Now, you can run the pipeline using the minumum of arguments:
 
 ```bash
 nextflow run /PATH/shallowmapping/main.nf \
    --biome <CATALOGUE_ID> \
    --input samplesheet.csv \
    --outdir <PROJECT_NAME> default = `results` \
-   --shallow_dbs_path </PATH/> \
-   --decont_reference_paths </PATH/>
+   --shallow_dbs_path <CATALOGUE_DBS_PATH> \
+   --decont_reference_paths <DECONT_REFS_PATH/reference_genomes>
 ```
 
-At the moment, the biome selection is limited to the precomputed databases available to downloading (chicken-gut-v1-0-1 and mouse-gut-v1-0). Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) under request by opening an issue in this repo.
+At the moment, the biome selection is limited to the precomputed databases available to download (chicken-gut-v1-0-1 and mouse-gut-v1-0). Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) under request by opening an issue in this repo.
 
 The central location for the databases can be set in the config file.
 
@@ -96,26 +96,13 @@ Use `--core_mode true` for large catalogues like the mouse-gut to avoid over-pre
 Nextflow option `-profile` can be use to select a suitable config for your computational resources.
 Nextflow option `-resume` can be use to re-run the pipeline from the last successfully finished step. 
 
-### Test
-Once the databases has been set up, you can run a test with the provided dataset from the `shallowmapping/test` directory
-
-```bash
-nextflow run ../main.nf \
-    --biome BIOME \
-    --input test_samplesheet.csv \
-    --outdir test_output \
-    --shallow_dbs_path CATALOGUE_DBS_PATH \
-    --decont_reference_paths DECONT_REFS_PATH/reference_genomes
-```
-
 
 ## Credits
 
 ebi-metagenomics/shallowmapping pipeline was originally written by @Ales-ibt.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
-
-@mberacochea
+@mberacochea, @ebi-jlu8
 
 
 ## Citations
