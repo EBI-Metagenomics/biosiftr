@@ -10,9 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-                "input"
-            ],
+            "required": ["input", "biome"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -24,6 +22,19 @@
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
                     "fa_icon": "fas fa-file-csv"
+                },
+                "biome": {
+                    "type": "string",
+                    "description": "This can be any of the MGnify catalogues for which shallow-mapping databases are currently available",
+                    "enum": ["chicken-gut-v1-0-1", "mouse-gut-v1-0"]
+                },
+                "run_bwa": {
+                    "type": "boolean",
+                    "description": "Generate extra results of taxonomic and functional profiles using bwa-mem2"
+                },
+                "core_mode": {
+                    "type": "boolean",
+                    "description": "The pipeline will use the core functinoal annotations instead of pangenome functionl annotations."
                 },
                 "outdir": {
                     "type": "string",
@@ -45,6 +56,27 @@
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature",
                     "hidden": true
+                }
+            }
+        },
+        "reference_databases": {
+            "title": "Reference databases indexed",
+            "type": "object",
+            "fa_icon": "fas fa-database",
+            "description": "The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to already exists. Please provide full paths.",
+            "required": ["shallow_dbs_path", "decont_reference_paths"],
+            "properties": {
+                "shallow_dbs_path": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "fa_icon": "fas fa-folder",
+                    "description": "Central location for the MGnify Genomes catalogue reference."
+                },
+                "decont_reference_paths": {
+                    "type": "string",
+                    "fa_icon": "fas fa-folder",
+                    "format": "directory-path",
+                    "description": "Central location of reference genomes for decontamination. Other bwamem2 databases can exist here."
                 }
             }
         },
@@ -108,14 +140,7 @@
                     "description": "Method used to save pipeline results to output directory.",
                     "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
                     "fa_icon": "fas fa-copy",
-                    "enum": [
-                        "symlink",
-                        "rellink",
-                        "link",
-                        "copy",
-                        "copyNoFollow",
-                        "move"
-                    ],
+                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
                     "hidden": true
                 },
                 "email_on_fail": {
@@ -208,48 +233,13 @@
             "$ref": "#/definitions/input_output_options"
         },
         {
+            "$ref": "#/definitions/reference_databases"
+        },
+        {
             "$ref": "#/definitions/max_job_request_options"
         },
         {
             "$ref": "#/definitions/generic_options"
         }
-    ],
-    "properties": {
-        "biome": {
-            "type": "string",
-            "description": "This can be any of the MGnify catalogues for which shallow-mapping databases are currently available",
-            "enum": [
-                "chicken-gut-v1-0-1",
-                "mouse-gut-v1-0"
-            ]
-        },
-        "run_bwa": {
-            "type": "boolean",
-            "description": "Generate extra results of taxonomic and functional profiles using bwa-mem2"
-        },
-        "workdir": {
-            "type": "string",
-            "default": "/hps/nobackup/rdf/metagenomics/service-team/nextflow-workdir/shallow-mapping/",
-            "description": "Nextflow working directory"
-        },
-        "singularity_cachedir": {
-            "type": "string",
-            "default": "/hps/nobackup/rdf/metagenomics/service-team/singularity-cache/",
-            "description": "Location to store singularity images"
-        },
-        "core_mode": {
-            "type": "boolean"
-        },
-        "shallow_dbs_path": {
-            "type": "string"
-        },
-        "decont_reference_paths": {
-            "type": "string"
-        }
-    },
-    "required": [
-        "biome",
-        "shallow_dbs_path",
-        "decont_reference_paths"
     ]
 }
