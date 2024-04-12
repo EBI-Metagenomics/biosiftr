@@ -147,7 +147,3 @@ echo "          --input test_samplesheet.csv \\"
 echo "          --outdir test_output \\"
 echo "          --shallow_dbs_path $CATALOGUE_DBS_PATH \\"
 echo "          --decont_reference_paths ${DECONT_REFS_PATH}reference_genomes"
-
-
-
-

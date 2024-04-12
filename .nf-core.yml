@@ -1,34 +1,53 @@
 lint:
   files_exist:
-  - CODE_OF_CONDUCT.md
-  - assets/nf-core-shallowmapping_logo_light.png
-  - docs/
-  - pyproject.toml
-  - .gitignore
-  - .github/ISSUE_TEMPLATE/config.yml
-  - .github/workflows/*
-  - .github/CONTRIBUTING.md
-  - .github/PULL_REQUEST_TEMPLATE.md
-  - conf/igenomes.config
-  - conf/igenomes.config
-  - conf/test.config
-  - conf/test_full.config
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-shallowmapping_logo_light.png
+    - docs/
+    - docs/output.md
+    - docs/README.md
+    - docs/README.md
+    - docs/usage.md
+    - docs/images/nf-core-shallowmapping_logo_dark.png
+    - docs/images/nf-core-shallowmapping_logo_light.png
+    - pyproject.toml
+    - .gitignore
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/workflows/*
+    - .github/CONTRIBUTING.md
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - conf/igenomes.config
+    - conf/igenomes.config
+    - conf/test.config
+    - conf/test_full.config
+    - .github/workflows/ci.yml
+    - lib/Utils.groovy
+    - lib/WorkflowMain.groovy
+    - lib/NfcoreTemplate.groovy
+    - lib/WorkflowShallowmapping.groovy
+    - lib/nfcore_external_java_deps.jar
   files_unchanged:
-  - CODE_OF_CONDUCT.md
-  - assets/nf-core-shallowmapping_logo_light.png
-  - .github/ISSUE_TEMPLATE/bug_report.yml
+    - CODE_OF_CONDUCT.md
+    - assets/nf-core-shallowmapping_logo_light.png
+    - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/CONTRIBUTING.md does not match the template
+    - .github/PULL_REQUEST_TEMPLATE.md does not match the template
+    - .github/workflows/branch.yml does not match the template
+    - .github/workflows/linting_comment.yml does not match the template
+    - .github/workflows/linting.yml does not match the template
+    - .gitignore does not match the template
+    - pyproject.toml does not match the template
   multiqc_config:
-  - report_comment
+    - report_comment
   nextflow_config:
-  - manifest.name
-  - manifest.homePage
-  - process.cpus
-  - process.memory
-  - process.time
-  - custom_config
+    - manifest.name
+    - manifest.homePage
+    - process.cpus
+    - process.memory
+    - process.time
+    - custom_config
 repository_type: pipeline
 template:
   prefix: ebi-metagenomics
   skip:
-  - igenomes
-  - nf_core_configs
+    - igenomes
+    - nf_core_configs
