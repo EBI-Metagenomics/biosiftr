@@ -2,6 +2,17 @@
     "name": "ebi-metagenomics/shallowmapping",
     "homePage": "https://github.com/ebi-metagenomics/shallowmapping",
     "repos": {
+        "https://github.com/EBI-Metagenomics/nf-modules/": {
+            "modules": {
+                "ebi-metagenomics": {
+                    "bwamem2decontnobams": {
+                        "branch": "main",
+                        "git_sha": "32049180387cf2406254acf57882fc55915cb52e",
+                        "installed_by": ["modules"]
+                    }
+                }
+            }
+        },
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
@@ -19,6 +30,17 @@
                         "branch": "master",
                         "git_sha": "911696ea0b62df80e900ef244d7867d177971f73",
                         "installed_by": ["modules"]
+                    },
+                    "sourmash/gather": {
+                        "branch": "master",
+                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+                        "installed_by": ["modules"]
+                    },
+                    "sourmash/sketch": {
+                        "branch": "master",
+                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/sourmash/sketch/sourmash-sketch.diff"
                     }
                 }
             }
