@@ -91,8 +91,15 @@ Optional arguments include:
 ```
 
 Use `--core_mode true` for large catalogues like the mouse-gut to avoid over-prediction due to an extremely large number of accessory genes in the pangenome.
-Nextflow option `-profile` can be use to select a suitable config for your computational resources.
+Nextflow option `-profile` can be use to select a suitable config for your computational resources. You can add profile files to the `config` directory.
 Nextflow option `-resume` can be use to re-run the pipeline from the last successfully finished step.
+
+
+## Test
+
+To test the pipeline you can run...
+
+
 
 ## Credits
 

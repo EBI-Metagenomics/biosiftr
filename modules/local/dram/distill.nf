@@ -14,7 +14,7 @@ process DRAM_DISTILL {
     val(in_type)    //species or community
 
     output:
-    tuple val(meta), path("*_dram.*"), emit: destill_out
+    tuple val(meta), path("*_dram*"), emit: destill_out
     path "versions.yml"              , emit: versions
 
     when:
@@ -27,22 +27,16 @@ process DRAM_DISTILL {
 
     """
     if [[ "${in_type}" == "community" ]]; then
-        echo ",fasta,scaffold,gene_position,start_position,end_position,strandedness,rank,kegg_id,kegg_hit,pfam_hits,cazy_hits,bin_taxonomy" | sed 's/,/\t/g' > community_input.txt
-        cat $dram_summary >> community_input.txt  
-        DRAM.py \\
-            distill \\
-            -i community_input.txt  \\
-            -o dram_out
-        mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
-        mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
-    else
-        DRAM.py \\
-            distill \\
-            -i $dram_summary  \\
-            -o dram_out
-        mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
-        mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
+        echo ",fasta,scaffold,gene_position,start_position,end_position,strandedness,rank,kegg_id,kegg_hit,pfam_hits,cazy_hits,bin_taxonomy" | sed 's/,/\t/g' > dram_input.txt
     fi
+
+    cat $dram_summary >> dram_input.txt  
+    DRAM.py \\
+        distill \\
+        -i dram_input.txt  \\
+        -o dram_out
+    mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
+    mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
