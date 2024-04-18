@@ -14,8 +14,8 @@ process DRAM_DISTILL {
     val(in_type)    //species or community
 
     output:
-    tuple val(meta), path("*_dram*"), emit: destill_out
-    path "versions.yml"              , emit: versions
+    tuple val(meta), path("*_dram*"), emit: destill_out, optional: true
+    path "versions.yml"             , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -31,12 +31,16 @@ process DRAM_DISTILL {
     fi
 
     cat $dram_summary >> dram_input.txt  
-    DRAM.py \\
-        distill \\
-        -i dram_input.txt  \\
-        -o dram_out
-    mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
-    mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
+    line_count=\$(wc -l dram_input.txt)
+
+    if [[ \$line_count -gt 1 ]]; then
+        DRAM.py \\
+            distill \\
+            -i dram_input.txt  \\
+            -o dram_out
+        mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
+        mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

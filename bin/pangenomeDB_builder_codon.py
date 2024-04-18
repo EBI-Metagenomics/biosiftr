@@ -51,7 +51,10 @@ def metadata_parser(catalogue_metadata):
 def accessory_writer(reps_clusters, loc_prefix):
     for rep in reps_clusters:
         if len(reps_clusters[rep]) > 1:
-            rep_prefix = rep[:-2]
+            if rep.endswith('.1'):
+                rep_prefix = rep[:-4]
+            else:
+                rep_prefix = rep[:-2]
             pan_loc = (
                 loc_prefix
                 + "/species_catalogue/"
@@ -85,7 +88,10 @@ def accessory_writer(reps_clusters, loc_prefix):
 def annot_writer(reps_clusters, loc_prefix, pfam_desc):
     for rep in reps_clusters:
         core_list, core_mgygs = [], []
-        rep_prefix = rep[:-2]
+        if rep.endswith('.1'):
+            rep_prefix = rep[:-4]
+        else:
+            rep_prefix = rep[:-2]
         rep_loc = (
             loc_prefix + "/species_catalogue/" + rep_prefix + "/" + rep + "/genome/"
         )
@@ -205,23 +211,6 @@ def gff_parser(gff_file):
                     att_l = attr.split(";")
                     gene_id = att_l[0].replace("ID=", "")
                     gff_dict[gene_id] = [contig, start, end, strand]
-                    """
-                    kegg_flag, pfam_flag = 0, 0
-                    for attribute in att_l:
-                        att_key,att_val = attribute.split('=')
-                        if att_key == 'KEGG':
-                            ko = att_val.replace('ko:','')
-                            kegg_flag = 1
-                        if att_key == 'Pfam':
-                            pfam = att_val
-                            pfam_flag = 1
-                    if kegg_flag == 0:
-                        ko = '-'
-                    if pfam_flag == 0:
-                        pfam = '-'
-                    gff_dict[gene_id].append(ko)
-                    gff_dict[gene_id].append(pfam)
-                    """
     return gff_dict
 
 
