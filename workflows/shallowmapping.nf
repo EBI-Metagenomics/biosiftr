@@ -29,7 +29,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 ~~~~~~~~~~~~~~~~~
 */
 dram_dbs          = file("$params.shallow_dbs_path/external_dbs/dram_distill_dbs", checkIfExists: true)
-sourmash_db       = file("$params.shallow_dbs_path/$params.biome/sourmash_species_representatives_k51.sbt.zip", checkIfExists: true)
+sourmash_db       = file("$params.shallow_dbs_path/$params.biome/sourmash_species_representatives_k21.sbt.zip", checkIfExists: true)
 bwa_db            = file("$params.shallow_dbs_path/$params.biome/bwa_reps.*", checkIfExists: true)
 pangenome_db      = file("$params.shallow_dbs_path/$params.biome/functional_profiles_DB/", checkIfExists: true)
 kegg_comp_db      = file("$params.shallow_dbs_path/$params.biome/kegg_completeness_DB/", checkIfExists: true)
