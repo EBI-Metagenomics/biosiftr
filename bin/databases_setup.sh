@@ -104,7 +104,7 @@ tar -xvf kegg_completeness.tar.gz
 rm kegg_completeness.tar.gz
 
 # Downloading the representative genomes indexed for sourmash
-wget --continue "https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$PREFIX_BIOME/$VERSION/sourmash_db_${HOST}_${VERSION}/sourmash_species_representatives_k51.sbt.zip"
+wget --continue "https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$PREFIX_BIOME/$VERSION/sourmash_db_${HOST}_${VERSION}/sourmash_species_representatives_k21.sbt.zip"
 
 # Downloading bwamem2 db index if the option is set
 if [ "$DOWNLOAD_BWA" = "true" ]; then
