@@ -20,21 +20,25 @@ process KEGG_COMPLETENESS {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.1' // WARN: The tool have no option to print the running version. This is the container version
     """
-    cat $kos_table | head -1 | sed 's/ko_id/module/' > ${prefix}_${tool}_community_kegg_modules_comp.tsv
-    sed '1d' $kos_table | cut -f1 | tr "\n" ","  > kos.list
+    cat $kos_table | head -1 | awk '{gsub("ko_id", "module"); print}' > ${prefix}_${tool}_community_kegg_modules_comp.tsv
+
+    echo "header printed"
+
+    cat ${kos_table} | awk 'NR>1' | cut -f1 | tr "\\n" "," > kos.list
+
+    echo "creating kos.list file"
 
     run_pathways.sh \\
         -l kos.list \\
         -o result \\
         $args
 
-    awk -F '\t' '{print \$1 "|" \$3 "\t" \$2}' result.summary.kegg_pathways.tsv | sed '/^module_accession/d' >> ${prefix}_${tool}_community_kegg_modules_comp.tsv
+    cat result.summary.kegg_pathways.tsv | awk -F '\\t' 'NR>1 {print \$1 "|" \$3 "\t" \$2}' >> ${prefix}_${tool}_community_kegg_modules_comp.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         kegg_comm: $VERSION
     END_VERSIONS
-
     """
 
     stub:
