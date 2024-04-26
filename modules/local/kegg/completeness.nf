@@ -16,24 +16,21 @@ process KEGG_COMPLETENESS {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.1' // WARN: The tool have no option to print the running version. This is the container version
+    def VERSION = '1.1' // WARN: The tool have no option to print the version. This is the container version
     """
-    cat $kos_table | head -1 | awk '{gsub("ko_id", "module"); print}' > ${prefix}_${tool}_community_kegg_modules_comp.tsv
-
-    echo "header printed"
-
+    echo "creating kos.list file"
     cat ${kos_table} | awk 'NR>1' | cut -f1 | tr "\\n" "," > kos.list
 
-    echo "creating kos.list file"
-
+    echo "Running KEGG completeness for the community"
     run_pathways.sh \\
         -l kos.list \\
-        -o result \\
-        $args
+        -o result
 
-    cat result.summary.kegg_pathways.tsv | awk -F '\\t' 'NR>1 {print \$1 "|" \$3 "\t" \$2}' >> ${prefix}_${tool}_community_kegg_modules_comp.tsv
+    echo "Formatting output"
+    cat result.summary.kegg_pathways.tsv | awk -v prefix=${prefix} -v tool=${tool} -F'\\t' 'NR==1 {print "module\\t" prefix "_" tool; next} {print \$1 "|" \$3 "\\t" \$2}' result.summary.kegg_pathways.tsv > ${prefix}_${tool}_community_kegg_modules_comp.tsv
+
+    echo "Reformatted output done"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
