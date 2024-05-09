@@ -1,6 +1,6 @@
 process DRAM_DISTILL {
     tag "$meta.id"
-    label 'process_single'
+    label 'process_high'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/dram:1.3.5--pyhdfd78af_0':
@@ -27,16 +27,19 @@ process DRAM_DISTILL {
 
     """
     if [[ "${in_type}" == "community" ]]; then
-        echo ",fasta,scaffold,gene_position,start_position,end_position,strandedness,rank,kegg_id,kegg_hit,pfam_hits,cazy_hits,bin_taxonomy" | sed 's/,/\t/g' > dram_input.txt
+        echo ",fasta,scaffold,gene_position,start_position,end_position,strandedness,rank,kegg_id,kegg_hit,pfam_hits,cazy_hits,bin_taxonomy" | sed 's/,/\t/g' > dram_input.tsv
     fi
 
-    cat $dram_summary >> dram_input.txt  
-    line_count=\$(wc -l dram_input.txt)
+    cat $dram_summary >> dram_input.tsv
+    line_count=\$(wc -l dram_input.tsv | cut -d' ' -f1)
 
-    if [[ \$line_count -gt 1 ]]; then
+    echo "Line count is "\$line_count
+
+    if [[ \$line_count > 1 ]]; then
+        echo "running dram.py"
         DRAM.py \\
             distill \\
-            -i dram_input.txt  \\
+            -i dram_input.tsv  \\
             -o dram_out
         mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
         mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
