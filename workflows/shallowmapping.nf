@@ -41,7 +41,7 @@ kegg_comp_db      = file("$params.shallow_dbs_path/$params.biome/kegg_completene
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// Preprocessing modules
+// QC and version modules
 include { FASTP                                    } from '../modules/local/fastp/main'
 include { BWAMEM2DECONTNOBAMS as HUMAN_PHIX_DECONT } from '../modules/ebi-metagenomics/bwamem2decontnobams/main'
 include { BWAMEM2DECONTNOBAMS as HOST_DECONT       } from '../modules/ebi-metagenomics/bwamem2decontnobams/main'
@@ -58,8 +58,7 @@ include { DRAM_DISTILL as SM_DRAM           } from '../modules/local/dram/distil
 include { KEGG_COMPLETENESS as SM_COMM_KC   } from '../modules/local/kegg/completeness'
 include { KEGG_SPECIES as SM_SPEC_KC        } from '../modules/local/kegg/species'
 
-include { ALIGN_BWAMEM2                      } from '../modules/local/align/bwamem2'
-include { POSTPROC_BAM2COV                   } from '../modules/local/postproc/bam2cov'
+include { ALIGN_BWAMEM2                      } from '../modules/local/align/bwamem2_pysam'
 include { POSTPROC_BWATAXO                   } from '../modules/local/postproc/bwataxo'
 include { POSTPROC_FUNCTIONSPRED as BWA_FUNC } from '../modules/local/postproc/functionspred'
 include { DRAM_DISTILL as BWA_DRAM           } from '../modules/local/dram/distill'
@@ -78,6 +77,7 @@ include { POSTPROC_INTEGRATOR as BWA_INT_KO   } from '../modules/local/postproc/
 include { POSTPROC_INTEGRATOR as BWA_INT_PFAM } from '../modules/local/postproc/integrator'
 include { POSTPROC_INTEGRATOR as BWA_INT_MODU } from '../modules/local/postproc/integrator'
 include { DRAM_DISTILL as BWA_INT_DRAM        } from '../modules/local/dram/distill'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -192,13 +192,11 @@ workflow SHALLOWMAPPING {
         genomes_ref = Channel.fromPath( bwa_db ).collect().map { db_files ->
         [ [id: host_name ], db_files ]
         }
+
         ALIGN_BWAMEM2 ( hq_reads, genomes_ref )
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
-        POSTPROC_BAM2COV ( ALIGN_BWAMEM2.out.bam )
-        ch_versions = ch_versions.mix(POSTPROC_BAM2COV.out.versions.first())
-
-	POSTPROC_BWATAXO ( POSTPROC_BAM2COV.out.cov_file, "$params.shallow_dbs_path/$params.biome/genomes-all_metadata.tsv" )
+	POSTPROC_BWATAXO ( ALIGN_BWAMEM2.out.cov_file, "$params.shallow_dbs_path/$params.biome/genomes-all_metadata.tsv" )
 	ch_versions = ch_versions.mix(POSTPROC_BWATAXO.out.versions.first())
 
         if (params.core_mode) {
