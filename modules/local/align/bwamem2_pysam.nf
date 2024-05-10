@@ -51,7 +51,7 @@ process ALIGN_BWAMEM2 {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_u_relab_01
+    touch ${prefix}_u_relab_01.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         bwamem2: \$(echo \$(bwa-mem2 version 2>&1) | sed 's/.* //')
