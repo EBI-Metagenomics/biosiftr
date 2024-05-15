@@ -37,7 +37,7 @@ process ALIGN_BWAMEM2 {
         --prefix ${prefix}_u_relab_01
 
     echo " ---> removing bam file"
-    rm -rf *.bam *.bai
+    rm *.bam *.bai
 
 
     cat <<-END_VERSIONS > versions.yml
