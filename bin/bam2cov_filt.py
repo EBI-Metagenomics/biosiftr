@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import pysam
@@ -72,7 +72,7 @@ def bam_parser(bam_file):
 
 def FP_control(out_root, genomes_len, unique_matches, ave_read_len):
     unique_thres01 = []
-    cov_threhold = 0.1
+    COV_THRESHOLD = 0.01
     total_unique = 0
     for genome in unique_matches:
         assembly_len = genomes_len[genome]
@@ -80,7 +80,7 @@ def FP_control(out_root, genomes_len, unique_matches, ave_read_len):
         genome_coverage = (float(mapped_reads) * float(ave_read_len)) / float(
             assembly_len
         )
-        if genome_coverage >= cov_threhold:
+        if genome_coverage >= COV_THRESHOLD:
             total_unique = total_unique + mapped_reads
             unique_thres01.append(genome)
 
@@ -114,7 +114,7 @@ def FP_control(out_root, genomes_len, unique_matches, ave_read_len):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="This script process the bam file generated using bwa-mem2 with the flag -M. The bam file has to be filtered using -F4 -F256 flags, then sorted and indexed. The output of this script is a table of relative abundance of genomes based on unique mappin greads. Only genomnes having a mean depth coverage >0.1 are considered."
+        description="This script process the bam file generated using bwa-mem2 with the flag -M. The bam file has to be filtered using -F4 -F256 flags, then sorted and indexed. The output of this script is a table of relative abundance of genomes based on unique mapping reads. Only genomes having a mean depth coverage >0.01 are considered."
     )
     parser.add_argument(
         "--bwa_bam",

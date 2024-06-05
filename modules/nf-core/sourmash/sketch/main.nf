@@ -18,8 +18,7 @@ process SOURMASH_SKETCH {
     task.ext.when == null || task.ext.when
 
     script:
-    // required defaults for the tool to run, but can be overridden
-    def args = task.ext.args ?: "dna --param-string 'scaled=1000,k=51,abund'"
+    def args = task.ext.args ?: "dna --param-string 'scaled=1000,k=21,abund'"
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     sourmash sketch \\
