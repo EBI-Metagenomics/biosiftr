@@ -5,17 +5,17 @@
 
 **ebi-metagenomics/shallowmapping** is a bioinformatics pipeline that generates taxonomic and functional profiles for low-yield (shallow shotgun: < 10 M reads) short raw-reads using [`MGnify biome-specific genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) as a reference.
 
-At the moment, the biome selection is limited to the precomputed databases for [chicken-gut-v1-0-1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1) and [mouse-gut-v1-0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0). Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) upon request by opening an issue in this repository (they will be built on a best-effort basis).
+At the moment, the biome selection is limited to the precomputed databases for [chicken-gut-v1-0-1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1), [mouse-gut-v1-0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0), and [human-gut-v2-0-2](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-gut-v2-0-2). Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) upon request by opening an issue in this repository (they will be built on a best-effort basis).
 
-The main sections of the pipeline includes the following steps:
+The main sections of the pipeline include the following steps:
 
 1. Raw-reads quality control ([`fastp`](https://github.com/OpenGene/fastp))
 2. HQ reads decontamination versus human, phyX, and host ([`bwa-mem2`](https://github.com/bwa-mem2/bwa-mem2))
 3. QC report of decontaminated reads ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 4. Integrated quality report of reads before and after decontamination ([`MultiQC`](http://multiqc.info/))
 5. Mapping HQ clean reads using [`Sourmash`](https://github.com/sourmash-bio/sourmash) and bwa-mem2 (optional)
-6. Taxonomic profiles generation
-7. Functional profiles inference
+6. Taxonomic profile generation
+7. Functional profile inference
 
 The final output includes a species relative abundance table, Pfam and KEGG Orthologs (KO) count tables, a KEGG modules completeness table, and DRAM-style visuals. In addition, the shallow-mapping pipeline will integrate the taxonomic and functional tables of all the samples in the input samplesheet.
 
@@ -79,7 +79,7 @@ nextflow run ebi-metagenomics/shallowmapping \
    --decont_reference_paths <DECONT_REFS_PATH/reference_genomes>
 ```
 
-At the moment, the biome selection is limited to the precomputed databases for [chicken-gut-v1-0-1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1) and [mouse-gut-v1-0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0). Other databases can be built for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) upon request by opening an issue in this repository (they will be built on a best-effort basis).
+At the moment, the biome selection is limited to the precomputed databases for [chicken-gut-v1-0-1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1), [mouse-gut-v1-0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0), and [human-gut-v2-0-2](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-gut-v2-0-2). Other databases can be built for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) upon request by opening an issue in this repository (they will be built on a best-effort basis).
 
 The central location for the databases can be set in the config file.
 
@@ -90,9 +90,9 @@ Optional arguments include:
 --core_mode <true or false> default = `false` # To use core functions instead of pangenome functions
 ```
 
-Use `--core_mode true` for large catalogues like the mouse-gut to avoid over-prediction due to an extremely large number of accessory genes in the pangenome.
-Nextflow option `-profile` can be use to select a suitable config for your computational resources. You can add profile files to the `config` directory.
-Nextflow option `-resume` can be use to re-run the pipeline from the last successfully finished step.
+Use `--core_mode true` for large catalogues like the human-gut to avoid over-prediction due to an extremely large number of accessory genes in the pangenome.
+Nextflow option `-profile` can be used to select a suitable config for your computational resources. You can add profile files to the `config` directory.
+Nextflow option `-resume` can be used to re-run the pipeline from the last successfully finished step.
 
 ## Test
 
