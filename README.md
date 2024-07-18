@@ -38,7 +38,7 @@ git clone https://github.com/EBI-Metagenomics/shallowmapping.git
 
 ### Required reference databases
 
-The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to already exists. Please provide full paths.
+The first time you run the pipeline you must put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify hosts most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to exist already. Please provide full paths.
 
 Consider that decontamination reference genomes require ~15-20G of storage.
 MGnify catalogue genomes db occupy ~1G.
@@ -53,6 +53,8 @@ bash bin/databases_setup.sh \
 ```
 
 Running the pipeline using bwamem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. Consider that this database will occupy >15G of storage in your system.
+
+In addition, instructions to generate the databases from custom catalogues can be found in the [shallowmapping paper's repository](https://github.com/EBI-Metagenomics/shallow_shotgun_paper/tree/main?tab=readme-ov-file#31-processing-custom-genome-catalogues).
 
 ### Usage
 
