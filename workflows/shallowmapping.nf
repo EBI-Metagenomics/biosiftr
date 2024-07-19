@@ -112,7 +112,7 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
     // Creating channel for decontamination with human + phix genomes
-    hp_ref = Channel.fromPath("$params.decont_reference_paths/human_phix*", checkIfExists: true).collect().map { db_files ->
+    hp_ref = Channel.fromPath("${params.decont_reference_paths}/human_phix*", checkIfExists: true).collect().map { db_files ->
         [ [id: 'human_phiX'], db_files ]
     }
     HUMAN_PHIX_DECONT ( FASTP.out.reads, hp_ref )
@@ -120,10 +120,10 @@ workflow SHALLOWMAPPING {
 
     // Creating channel for decontamination with host when biome != human
     def host_name = params.biome.split('-')[0]
-    if ('human' in params.biome) {
+    if ( params.biome.contains( 'human' ) ) {
         hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
     } else {
-        host_ref = Channel.fromPath("$params.decont_reference_paths/$host_name.*", checkIfExists: true).collect().map { db_files ->
+        host_ref = Channel.fromPath("${params.decont_reference_paths}/$host_name.*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name], db_files ]
         }
 
@@ -131,7 +131,6 @@ workflow SHALLOWMAPPING {
         hq_reads = HOST_DECONT.out.decont_reads
         ch_versions = ch_versions.mix(HOST_DECONT.out.versions.first())
     }
-
 
     // QC report after decontamination
     FASTQC_DECONT ( hq_reads )
@@ -148,7 +147,7 @@ workflow SHALLOWMAPPING {
 
     // Processing sourmash mapping output: generating taxonomic and functional profiles
     POSTPROC_SOURMASHTAXO ( SOURMASH_GATHER.out.result, "$params.shallow_dbs_path/$params.biome/genomes-all_metadata.tsv" )
-    ch_versions = ch_versions.mix(POSTPROC_SOURMASHTAXO.out.versions.first())    
+    ch_versions = ch_versions.mix(POSTPROC_SOURMASHTAXO.out.versions.first())
 
     if (params.core_mode) {
         SM_FUNC ( POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', pangenome_db, dram_dbs )
@@ -183,23 +182,26 @@ workflow SHALLOWMAPPING {
     INTEGRA_MODU ( SM_COMM_KC.out.kegg_comp.collect{ it[1] }, 'sm_modules' )
     ch_versions = ch_versions.mix(INTEGRA_MODU.out.versions.first())
 
-    ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name:'dram_community.tsv', newLine: true){ it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
+    ch_dram_community = SM_FUNC.out.dram_comm.collectFile( name:'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [ [id: 'integrated'], dram_summary ] }
+
     INTEGRA_DRAM ( ch_dram_community, 'sm', 'community' )
+
     ch_versions = ch_versions.mix(INTEGRA_DRAM.out.versions.first())
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
-    if (params.run_bwa) {
+    if ( params.run_bwa ) {
+
         genomes_ref = Channel.fromPath( bwa_db ).collect().map { db_files ->
-        [ [id: host_name ], db_files ]
+            [ [id: host_name ], db_files ]
         }
 
         ALIGN_BWAMEM2 ( hq_reads, genomes_ref )
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
-	POSTPROC_BWATAXO ( ALIGN_BWAMEM2.out.cov_file, "$params.shallow_dbs_path/$params.biome/genomes-all_metadata.tsv" )
-	ch_versions = ch_versions.mix(POSTPROC_BWATAXO.out.versions.first())
+        POSTPROC_BWATAXO ( ALIGN_BWAMEM2.out.cov_file, "$params.shallow_dbs_path/$params.biome/genomes-all_metadata.tsv" )
+        ch_versions = ch_versions.mix(POSTPROC_BWATAXO.out.versions.first())
 
-        if (params.core_mode) {
+        if ( params.core_mode ) {
             BWA_FUNC ( POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', pangenome_db, dram_dbs )
             ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
 
