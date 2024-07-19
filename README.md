@@ -115,4 +115,3 @@ ebi-metagenomics/shallowmapping pipeline was originally written by @Ales-ibt.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 @mberacochea
-
