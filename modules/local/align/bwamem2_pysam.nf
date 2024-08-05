@@ -1,6 +1,5 @@
 process ALIGN_BWAMEM2 {
     tag "$meta.id"
-    label 'process_high'
 
     container 'quay.io/microbiome-informatics/bwa_eukcc:2.2.1_2.0'
 

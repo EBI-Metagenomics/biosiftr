@@ -123,7 +123,7 @@ workflow SHALLOWMAPPING {
     if ( params.biome.contains( 'human' ) ) {
         hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
     } else {
-        host_ref = Channel.fromPath("${params.decont_reference_paths}/$host_name.*", checkIfExists: true).collect().map { db_files ->
+        host_ref = Channel.fromPath("${params.decont_reference_paths}/${host_name}.*", checkIfExists: true).collect().map { db_files ->
         [ [id: host_name], db_files ]
         }
 
@@ -146,7 +146,7 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(SOURMASH_GATHER.out.versions.first())
 
     // Processing sourmash mapping output: generating taxonomic and functional profiles
-    POSTPROC_SOURMASHTAXO ( SOURMASH_GATHER.out.result, "$params.shallow_dbs_path/$params.biome/genomes-all_metadata.tsv" )
+    POSTPROC_SOURMASHTAXO ( SOURMASH_GATHER.out.result, "${params.shallow_dbs_path}/${params.biome}/genomes-all_metadata.tsv" )
     ch_versions = ch_versions.mix(POSTPROC_SOURMASHTAXO.out.versions.first())
 
     if (params.core_mode) {
