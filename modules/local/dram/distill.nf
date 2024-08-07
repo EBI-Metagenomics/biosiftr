@@ -50,15 +50,23 @@ process DRAM_DISTILL {
 
     echo "Line count is "\$line_count
 
-    # Just in case, remove the folder
-    rm -rf dram_out/
-
     if [[ \$line_count > 1 ]]; then
         DRAM.py \\
             distill \\
             -i dram_input.tsv  \\
             -o dram_out
-        mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
+
+        counter=0
+        # Loop through each product_*.html files #
+        for productfile in dram_out/product*.html; do
+            mv "\$productfile" "${prefix}_${tool}_${in_type}_${counter}_dram.html"
+            counter=\$((counter + 1))
+        done
+
+        if [ -f dram_out/product.html ]; then
+            mv "dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html"
+        fi
+
         mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
     else
         echo "The dram_input.tsv file is empty... skpping dram"
