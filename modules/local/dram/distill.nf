@@ -6,7 +6,22 @@ process DRAM_DISTILL {
         'https://depot.galaxyproject.org/singularity/dram:1.3.5--pyhdfd78af_0':
         'quay.io/biocontainers/dram:1.3.5--pyhdfd78af_0' }"
 
-    containerOptions="--bind $params.shallow_dbs_path/external_dbs/dram_distill_dbs/:/data/ --bind $params.shallow_dbs_path/external_dbs/dram_distill_dbs/CONFIG:/usr/local/lib/python3.10/site-packages/mag_annotator/CONFIG"
+    containerOptions {
+        def arg = ""
+        switch (workflow.containerEngine) {
+            case 'singularity':
+                arg = "--bind"
+                break;
+            case 'docker':
+                arg = "--volume"
+                break;
+        }
+        mounts = [
+            "${params.shallow_dbs_path}/external_dbs/dram_distill_dbs/:/data/",
+            "${params.shallow_dbs_path}/external_dbs/dram_distill_dbs/CONFIG:/usr/local/lib/python3.10/site-packages/mag_annotator/CONFIG"
+        ]
+        return "${arg} " + mounts.join(" ${arg} ")
+    }
 
     input:
     tuple val(meta), path(dram_summary)
@@ -35,14 +50,18 @@ process DRAM_DISTILL {
 
     echo "Line count is "\$line_count
 
+    # Just in case, remove the folder
+    rm -rf dram_out/
+
     if [[ \$line_count > 1 ]]; then
-        echo "running dram.py"
         DRAM.py \\
             distill \\
             -i dram_input.tsv  \\
             -o dram_out
         mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
         mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
+    else
+        echo "The dram_input.tsv file is empty... skpping dram"
     fi
 
     cat <<-END_VERSIONS > versions.yml
