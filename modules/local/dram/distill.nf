@@ -39,7 +39,6 @@ process DRAM_DISTILL {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.3.5' // WARN: dram has no option to print the tool version. This is the container version
-
     """
     if [[ "${in_type}" == "community" ]]; then
         echo ",fasta,scaffold,gene_position,start_position,end_position,strandedness,rank,kegg_id,kegg_hit,pfam_hits,cazy_hits,bin_taxonomy" | sed 's/,/\t/g' > dram_input.tsv
@@ -59,7 +58,7 @@ process DRAM_DISTILL {
         counter=0
         # Loop through each product_*.html files #
         for productfile in dram_out/product*.html; do
-            mv "\$productfile" "${prefix}_${tool}_${in_type}_${counter}_dram.html"
+            mv "\$productfile" "${prefix}_${tool}_${in_type}_\$counter_dram.html"
             counter=\$((counter + 1))
         done
 
