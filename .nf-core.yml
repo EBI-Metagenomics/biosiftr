@@ -1,6 +1,7 @@
 lint:
   files_exist:
     - CODE_OF_CONDUCT.md
+    - CHANGELOG.md
     - assets/nf-core-shallowmapping_logo_light.png
     - docs/
     - docs/output.md
