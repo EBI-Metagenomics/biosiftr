@@ -51,12 +51,7 @@ def metadata_parser(catalogue_metadata):
 def accessory_writer(reps_clusters, panaroo_path):
     for rep in reps_clusters:
         if len(reps_clusters[rep]) > 1:
-            pan_loc = (
-                panaroo_path
-                + "/rep_"
-                + rep
-                + "_panaroo/"
-            )
+            pan_loc = panaroo_path + "/rep_" + rep + "_panaroo/"
 
             # Parsing the presence/absence tab
             r_tab_loc = pan_loc + "gene_presence_absence.Rtab"
@@ -82,7 +77,7 @@ def accessory_writer(reps_clusters, panaroo_path):
 def annot_writer(reps_clusters, loc_prefix, panaroo_path, pfam_desc):
     for rep in reps_clusters:
         core_list, core_mgygs = [], []
-        if rep.endswith('.1'):
+        if rep.endswith(".1"):
             rep_prefix = rep[:-4]
         else:
             rep_prefix = rep[:-2]
@@ -108,12 +103,7 @@ def annot_writer(reps_clusters, loc_prefix, panaroo_path, pfam_desc):
             clstr_size = len(reps_clusters[rep])
 
             # Parsing the core genes list
-            pan_loc = (
-                panaroo_path
-                + "/rep_"
-                + rep
-                + "_panaroo/"
-            )
+            pan_loc = panaroo_path + "/rep_" + rep + "_panaroo/"
             core_tab_loc = pan_loc + "core_genes.txt"
 
             # Saving the core genes ids

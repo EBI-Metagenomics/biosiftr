@@ -51,7 +51,7 @@ def metadata_parser(catalogue_metadata):
 def accessory_writer(reps_clusters, loc_prefix):
     for rep in reps_clusters:
         if len(reps_clusters[rep]) > 1:
-            if rep.endswith('.1'):
+            if rep.endswith(".1"):
                 rep_prefix = rep[:-4]
             else:
                 rep_prefix = rep[:-2]
@@ -88,7 +88,7 @@ def accessory_writer(reps_clusters, loc_prefix):
 def annot_writer(reps_clusters, loc_prefix, pfam_desc):
     for rep in reps_clusters:
         core_list, core_mgygs = [], []
-        if rep.endswith('.1'):
+        if rep.endswith(".1"):
             rep_prefix = rep[:-4]
         else:
             rep_prefix = rep[:-2]

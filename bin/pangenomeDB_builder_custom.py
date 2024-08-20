@@ -33,14 +33,14 @@ def pfam_parser(pfam_data):
     return pfam_desc
 
 
-def metadata_parser( drep_clstrs, derep_genomes ):
+def metadata_parser(drep_clstrs, derep_genomes):
     clusters = {}
     with open(drep_clstrs, "r") as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split(",")
-            clstr_member = l_line[0].replace('.fa','')
-            clstr_num = 'clstr_'+l_line[5]
+            clstr_member = l_line[0].replace(".fa", "")
+            clstr_num = "clstr_" + l_line[5]
             if clstr_num in clusters:
                 clusters[clstr_num].append(clstr_member)
             else:
@@ -48,7 +48,7 @@ def metadata_parser( drep_clstrs, derep_genomes ):
 
     reps_clusters = {}
     rep_assemblies_list = os.listdir(derep_genomes)
-    rep_genomes_list = [f.replace('.fa', '') for f in rep_assemblies_list]
+    rep_genomes_list = [f.replace(".fa", "") for f in rep_assemblies_list]
     for clstr in clusters:
         members = clusters[clstr]
         for genome in members:
@@ -61,7 +61,7 @@ def metadata_parser( drep_clstrs, derep_genomes ):
 def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
     for rep in reps_clusters:
         core_list = []
-        rep_loc = prokka_path + '/' + rep + '_prokka/'
+        rep_loc = prokka_path + "/" + rep + "_prokka/"
 
         # Parsing the gff file of clusters size = 1
         gff_loc = rep_loc + rep + ".gff"
@@ -81,12 +81,7 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
             clstr_size = len(reps_clusters[rep])
 
             # Parsing the core genes list
-            pan_loc = (
-                panaroo_path
-                + "/rep_"
-                + rep
-                + "_panaroo/"
-            )
+            pan_loc = panaroo_path + "/rep_" + rep + "_panaroo/"
             core_tab_loc = pan_loc + "core_genes.txt"
 
             # Saving the core genes ids
@@ -108,12 +103,16 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
                     for member_gen in genomes_list:
                         if len(member_gen) > 0:
                             if ";" in member_gen:
-                                paralogs = [p for p in member_gen.split(";") if 'refound' not in p]
+                                paralogs = [
+                                    p
+                                    for p in member_gen.split(";")
+                                    if "refound" not in p
+                                ]
                                 if len(paralogs) > 0:
                                     first_copy = paralogs[0]
                                     pan_genes[gene_key].append(first_copy)
                             elif not "refound" in member_gen:
-                               pan_genes[gene_key].append(member_gen) 
+                                pan_genes[gene_key].append(member_gen)
 
             # Giving priority to genes in the representative genome
             relevant_genes = {}
@@ -122,9 +121,9 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
                 rep_gene = [gene for gene in pan_genes[gene_key] if rep in gene]
                 if len(rep_gene) == 0:
                     selected_gene = pan_genes[gene_key][0]
-                    prefix = selected_gene.split('_')
+                    prefix = selected_gene.split("_")
                     prefix.pop(-1)
-                    prefix = '_'.join(prefix)
+                    prefix = "_".join(prefix)
                     relevant_members.append(prefix)
                 else:
                     selected_gene = rep_gene[0]
@@ -134,10 +133,10 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
 
             # Saving coordinates and strand of selected genes
             relevant_members = list(set(relevant_members))
-            
+
             acc_gff_dict = {}
             for member in relevant_members:
-                annot_loc = prokka_path + '/' + member + '_prokka/'
+                annot_loc = prokka_path + "/" + member + "_prokka/"
 
                 # Parsing the gff file of relevant members including the rep genome
                 mem_gff_loc = annot_loc + member + ".gff"
@@ -146,12 +145,11 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
                 # Parsing the eggNOG annotation of relevant genes
                 eggnog_annot = annot_loc + member + "_eggnog.emapper.annotations"
                 if os.path.exists(eggnog_annot):
-                    acc_gff_dict = acc_eggnog_parser(eggnog_annot, relevant_genes, acc_gff_dict, pfam_desc)
+                    acc_gff_dict = acc_eggnog_parser(
+                        eggnog_annot, relevant_genes, acc_gff_dict, pfam_desc
+                    )
 
-                
-
-            
-            '''
+            """
             # Integrating representative and accessory annotations
             integrated_dict = {}
             for rep_gene, annot_data in gff_dict.items():
@@ -160,11 +158,9 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
                 if len(acc_annot_data) == 7:
                     integrated_dict[acc_gene] = acc_annot_data
 
-            '''
+            """
 
             output_writer(acc_gff_dict, rep, clstr_size, core_names)
-            
-            
 
 
 def gff_parser(gff_file):
@@ -325,7 +321,6 @@ def acc_eggnog_parser(eggnog_annot, relevant_genes, acc_gff_dict, pfam_desc):
     return acc_gff_dict
 
 
-
 def output_writer(gff_dict, rep, clstr_size, core_names):
     with open(rep + "_clstr.tsv", "w") as file_out:
         file_out.write("#cluster size = " + str(clstr_size) + "\n")
@@ -408,8 +403,8 @@ def main():
     args = parser.parse_args()
 
     ### Calling functions
-    pfam_desc = pfam_parser( args.pfam_dat )
-    reps_clusters = metadata_parser( args.drep_clstrs, args.derep_genomes )
+    pfam_desc = pfam_parser(args.pfam_dat)
+    reps_clusters = metadata_parser(args.drep_clstrs, args.derep_genomes)
     annot_writer(reps_clusters, args.prokka_path, args.panaroo_path, pfam_desc)
 
 

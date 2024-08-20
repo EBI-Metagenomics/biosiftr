@@ -15,14 +15,14 @@ from Bio import SeqIO
 ##### July 3, 2024
 
 
-def metadata_parser( drep_clstrs, derep_genomes ):
+def metadata_parser(drep_clstrs, derep_genomes):
     clusters = {}
     with open(drep_clstrs, "r") as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split(",")
-            clstr_member = l_line[0].replace('.fa','')
-            clstr_num = 'clstr_'+l_line[5]
+            clstr_member = l_line[0].replace(".fa", "")
+            clstr_num = "clstr_" + l_line[5]
             if clstr_num in clusters:
                 clusters[clstr_num].append(clstr_member)
             else:
@@ -30,7 +30,7 @@ def metadata_parser( drep_clstrs, derep_genomes ):
 
     reps_clusters = {}
     rep_assemblies_list = os.listdir(derep_genomes)
-    rep_genomes_list = [f.replace('.fa', '') for f in rep_assemblies_list]
+    rep_genomes_list = [f.replace(".fa", "") for f in rep_assemblies_list]
     for clstr in clusters:
         members = clusters[clstr]
         for genome in members:
@@ -40,31 +40,35 @@ def metadata_parser( drep_clstrs, derep_genomes ):
     return reps_clusters
 
 
-def gff_gather( reps_clusters, gff_files ):
+def gff_gather(reps_clusters, gff_files):
     gff_files_abs = os.path.abspath(gff_files)
     cluster_counter = 0
     total_clusters = len(reps_clusters)
 
     for rep in reps_clusters:
         cluster_counter += 1
-        print("Processing cluster number " + str(cluster_counter) + " size " + str(len(reps_clusters[rep])) + " out of " + str(total_clusters))
-        
+        print(
+            "Processing cluster number "
+            + str(cluster_counter)
+            + " size "
+            + str(len(reps_clusters[rep]))
+            + " out of "
+            + str(total_clusters)
+        )
+
         if len(reps_clusters[rep]) > 1:
-            dest_path = 'rep_' + rep
+            dest_path = "rep_" + rep
             os.makedirs(dest_path, exist_ok=True)
 
             for member in reps_clusters[rep]:
-                src_file = os.path.join(gff_files_abs, member + '.gff')
-                link_name = os.path.join(dest_path, member + '.gff')
+                src_file = os.path.join(gff_files_abs, member + ".gff")
+                link_name = os.path.join(dest_path, member + ".gff")
 
                 if os.path.exists(src_file):
                     os.symlink(src_file, link_name)
                     print(f"Created symlink: {link_name} -> {src_file}")
                 else:
                     print(f"Source file does not exist: {src_file}")
-
-
-
 
 
 def main():
@@ -92,9 +96,9 @@ def main():
     args = parser.parse_args()
 
     ### Calling functions
-    reps_clusters = metadata_parser( args.drep_clstrs, args.derep_genomes )
-    gff_gather( reps_clusters, args.gff_files )
+    reps_clusters = metadata_parser(args.drep_clstrs, args.derep_genomes)
+    gff_gather(reps_clusters, args.gff_files)
+
 
 if __name__ == "__main__":
     main()
-

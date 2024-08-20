@@ -33,7 +33,7 @@ def metadata_parser(catalogue_metadata):
 def unzip_gz_files(src_dir, dest_dir):
     for root, _, files in os.walk(src_dir):
         for file_name in files:
-            if file_name.endswith('.gz'):
+            if file_name.endswith(".gz"):
                 full_file_name = os.path.join(root, file_name)
                 relative_path = os.path.relpath(full_file_name, src_dir)
                 dest_path = os.path.join(dest_dir, relative_path[:-3])
@@ -41,39 +41,38 @@ def unzip_gz_files(src_dir, dest_dir):
                 # Ensure the destination directory exists
                 os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
-                with gzip.open(full_file_name, 'rb') as f_in:
-                    with open(dest_path, 'wb') as f_out:
+                with gzip.open(full_file_name, "rb") as f_in:
+                    with open(dest_path, "wb") as f_out:
                         shutil.copyfileobj(f_in, f_out)
 
 
-def gff_gather( reps_clusters, loc_prefix ):
+def gff_gather(reps_clusters, loc_prefix):
     cluster_counter = 0
     total_clusters = len(reps_clusters)
     for rep in reps_clusters:
         cluster_counter += 1
-        print("Processing cluster number " + str(cluster_counter) + " out of " + str(total_clusters))
-        
-        if len(reps_clusters[rep]) > 1:
-            dest_dir = 'rep_' + rep
+        print(
+            "Processing cluster number "
+            + str(cluster_counter)
+            + " out of "
+            + str(total_clusters)
+        )
 
-            if rep.endswith('.1'):
+        if len(reps_clusters[rep]) > 1:
+            dest_dir = "rep_" + rep
+
+            if rep.endswith(".1"):
                 rep_prefix = rep[:-4]
             else:
                 rep_prefix = rep[:-2]
 
-            # Gathering the gff files 
+            # Gathering the gff files
             src_dir = (
-                loc_prefix
-                + "/all_genomes/"
-                + rep_prefix
-                + "/"
-                + rep
-                + "/genomes1/"
+                loc_prefix + "/all_genomes/" + rep_prefix + "/" + rep + "/genomes1/"
             )
 
             print("Unzipping " + str(len(reps_clusters[rep])) + " files for " + rep)
             unzip_gz_files(src_dir, dest_dir)
-
 
 
 def main():
@@ -90,9 +89,9 @@ def main():
 
     ### Calling functions
     loc_prefix = args.metadata.replace("genomes-all_metadata.tsv", "")
-    ( reps_clusters ) = metadata_parser( args.metadata )
-    gff_gather( reps_clusters, loc_prefix )
+    (reps_clusters) = metadata_parser(args.metadata)
+    gff_gather(reps_clusters, loc_prefix)
+
 
 if __name__ == "__main__":
     main()
-
