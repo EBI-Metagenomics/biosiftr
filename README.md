@@ -81,8 +81,6 @@ nextflow run ebi-metagenomics/shallowmapping \
    --decont_reference_paths <DECONT_REFS_PATH/reference_genomes>
 ```
 
-At the moment, the biome selection is limited to the precomputed databases for [chicken-gut-v1-0-1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1), [mouse-gut-v1-0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0), and [human-gut-v2-0-2](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-gut-v2-0-2). Other databases can be built for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) upon request by opening an issue in this repository (they will be built on a best-effort basis).
-
 The central location for the databases can be set in the config file.
 
 Optional arguments include:
