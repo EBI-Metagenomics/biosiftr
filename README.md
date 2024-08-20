@@ -5,17 +5,17 @@
 
 **ebi-metagenomics/shallowmapping** is a bioinformatics pipeline that generates taxonomic and functional profiles for low-yield (shallow shotgun: < 10 M reads) short raw-reads using [`MGnify biome-specific genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) as a reference.
 
-At the moment, the biome selection is limited to the precomputed databases for [chicken-gut-v1-0-1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1) and [mouse-gut-v1-0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0). Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) upon request by opening an issue in this repository (they will be built on a best-effort basis).
+At the moment, the biome selection is limited to the precomputed databases for [chicken-gut-v1-0-1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1), [mouse-gut-v1-0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0), and [human-gut-v2-0-2](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-gut-v2-0-2). Other databases can be build for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) upon request by opening an issue in this repository (they will be built on a best-effort basis).
 
-The main sections of the pipeline includes the following steps:
+The main sections of the pipeline include the following steps:
 
 1. Raw-reads quality control ([`fastp`](https://github.com/OpenGene/fastp))
 2. HQ reads decontamination versus human, phyX, and host ([`bwa-mem2`](https://github.com/bwa-mem2/bwa-mem2))
 3. QC report of decontaminated reads ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 4. Integrated quality report of reads before and after decontamination ([`MultiQC`](http://multiqc.info/))
 5. Mapping HQ clean reads using [`Sourmash`](https://github.com/sourmash-bio/sourmash) and bwa-mem2 (optional)
-6. Taxonomic profiles generation
-7. Functional profiles inference
+6. Taxonomic profile generation
+7. Functional profile inference
 
 The final output includes a species relative abundance table, Pfam and KEGG Orthologs (KO) count tables, a KEGG modules completeness table, and DRAM-style visuals. In addition, the shallow-mapping pipeline will integrate the taxonomic and functional tables of all the samples in the input samplesheet.
 
@@ -38,7 +38,7 @@ git clone https://github.com/EBI-Metagenomics/shallowmapping.git
 
 ### Required reference databases
 
-The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to already exists. Please provide full paths.
+The first time you run the pipeline you must put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify hosts most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to exist already. Please provide full paths.
 
 Consider that decontamination reference genomes require ~15-20G of storage.
 MGnify catalogue genomes db occupy ~1G.
@@ -53,6 +53,8 @@ bash bin/databases_setup.sh \
 ```
 
 Running the pipeline using bwamem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. Consider that this database will occupy >15G of storage in your system.
+
+In addition, instructions to generate the databases from custom catalogues can be found in the [shallowmapping paper's repository](https://github.com/EBI-Metagenomics/shallow_shotgun_paper/tree/main?tab=readme-ov-file#31-processing-custom-genome-catalogues).
 
 ### Usage
 
@@ -79,8 +81,6 @@ nextflow run ebi-metagenomics/shallowmapping \
    --decont_reference_paths <DECONT_REFS_PATH/reference_genomes>
 ```
 
-At the moment, the biome selection is limited to the precomputed databases for [chicken-gut-v1-0-1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1) and [mouse-gut-v1-0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0). Other databases can be built for any of the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) upon request by opening an issue in this repository (they will be built on a best-effort basis).
-
 The central location for the databases can be set in the config file.
 
 Optional arguments include:
@@ -90,9 +90,9 @@ Optional arguments include:
 --core_mode <true or false> default = `false` # To use core functions instead of pangenome functions
 ```
 
-Use `--core_mode true` for large catalogues like the mouse-gut to avoid over-prediction due to an extremely large number of accessory genes in the pangenome.
-Nextflow option `-profile` can be use to select a suitable config for your computational resources. You can add profile files to the `config` directory.
-Nextflow option `-resume` can be use to re-run the pipeline from the last successfully finished step.
+Use `--core_mode true` for large catalogues like the human-gut to avoid over-prediction due to an extremely large number of accessory genes in the pangenome.
+Nextflow option `-profile` can be used to select a suitable config for your computational resources. You can add profile files to the `config` directory.
+Nextflow option `-resume` can be used to re-run the pipeline from the last successfully finished step.
 
 ## Test
 
@@ -112,12 +112,4 @@ nextflow run ../main.nf \
 ebi-metagenomics/shallowmapping pipeline was originally written by @Ales-ibt.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
-@mberacochea, @ebi-jlu8
-
-## Citations
-
-> **The nf-core framework for community-curated bioinformatics pipelines.**
->
-> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
->
-> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
+@mberacochea

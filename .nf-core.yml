@@ -29,13 +29,13 @@ lint:
     - CODE_OF_CONDUCT.md
     - assets/nf-core-shallowmapping_logo_light.png
     - .github/ISSUE_TEMPLATE/bug_report.yml
-    - .github/CONTRIBUTING.md does not match the template
-    - .github/PULL_REQUEST_TEMPLATE.md does not match the template
-    - .github/workflows/branch.yml does not match the template
-    - .github/workflows/linting_comment.yml does not match the template
-    - .github/workflows/linting.yml does not match the template
-    - .gitignore does not match the template
-    - pyproject.toml does not match the template
+    - .github/CONTRIBUTING.md
+    - .github/PULL_REQUEST_TEMPLATE.md
+    - .github/workflows/branch.yml
+    - .github/workflows/linting_comment.yml
+    - .github/workflows/linting.yml
+    - .gitignore
+    - pyproject.toml
   multiqc_config:
     - report_comment
   nextflow_config:
