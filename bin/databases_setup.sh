@@ -1,14 +1,24 @@
 #!/bin/bash
 
+# Define the list of valid biomes
+valid_biomes=('chicken-gut-v1-0-1' 'mouse-gut-v1-0' 'non-model-fish-gut-v2-0' 'human-vaginal-v1-0' 'honeybee-gut-v1-0-1' 
+              'sheep-rumen-v1-0' 'marine-v2-0' 'zebrafish-fecal-v1-0' 'human-oral-v1-0-1' 'pig-gut-v1-0' 
+              'cow-rumen-v1-0-1' 'human-gut-v2-0-2')
+
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
         --biome)
             BIOME="$2"
+            # Check if the provided biome is in the valid biomes list
+            if [[ ! " ${valid_biomes[@]} " =~ " ${BIOME} " ]]; then
+                echo "The input $BIOME is not a valid biome, please use one of the following: ${valid_biomes[*]}"
+                exit 1
+            fi
             shift
             shift
-            ;;
+            ;;                        
         --catalogue_dbs_path)
             CATALOGUE_DBS_PATH="$2"
             shift
