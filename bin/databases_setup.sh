@@ -96,34 +96,38 @@ fi
 NEW_BIOME=$(echo $BIOME | sed 's/-vaginal-/-tmp-/;s/-v/|/;s/-tmp-/-vaginal-/' )
 PREFIX_BIOME=$(echo "$NEW_BIOME" | cut -d '|' -f1)
 VERSION=$(echo "$NEW_BIOME" | cut -d '|' -f2)
-VERSION=$(echo "v$VERSION" | sed 's/-/./g' )
+CAT_VERSION=$(echo "v$VERSION" | sed 's/-/./g' )
 
 echo " ***  Downloading catalogue related databases to ${CATALOGUE_DBS_PATH}/${BIOME}"
 
 # Downloading the catalogue metadata file
-wget --continue "https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$PREFIX_BIOME/$VERSION/genomes-all_metadata.tsv"
+wget --continue "https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$PREFIX_BIOME/$CAT_VERSION/genomes-all_metadata.tsv"
 
+# Setting up the files location in ftp
+TABLES_DIR="https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/mgnify_genomes/${PREFIX_BIOME}_reps"
+FUNCTIONS_DIR="$TABLES_DIR/${PREFIX_BIOME}_v${VERSION}_functions"
+SOURMASH_DIR="$TABLES_DIR/${PREFIX_BIOME}_v${VERSION}_sourmash"
+BWAMEM_DIR="$TABLES_DIR/${PREFIX_BIOME}_v${VERSION}_bwamem2.tar.gz"
 
 # Downloading the pangenome function tables
-wget --continue "https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$PREFIX_BIOME/$VERSION/pangenome_functions/functional_profiles.tar.gz"
+wget --continue "$FUNCTIONS_DIR/functional_profiles.tar.gz"
 tar -xvf functional_profiles.tar.gz
 rm functional_profiles.tar.gz
 
-wget --continue "https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$PREFIX_BIOME/$VERSION/pangenome_functions/kegg_completeness.tar.gz"
+wget --continue "$FUNCTIONS_DIR/kegg_completeness.tar.gz"
 tar -xvf kegg_completeness.tar.gz
 rm kegg_completeness.tar.gz
 
 # Downloading the representative genomes indexed for sourmash
-wget --continue "https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/$PREFIX_BIOME/$VERSION/sourmash_db_${HOST}_${VERSION}/sourmash_species_representatives_k21.sbt.zip"
+wget --continue "$SOURMASH_DIR/sourmash_species_representatives_k21.sbt.zip"
 
 # Downloading bwamem2 db index if the option is set
 if [ "$DOWNLOAD_BWA" = "true" ]; then
     echo " ***  Downloading bwamem2 indexed database for $BIOME to ${CATALOGUE_DBS_PATH}/${BIOME}"
-    NEW_PREFIX=$(echo "$PREFIX_BIOME" | sed 's/-/_/')
-    wget --continue "https://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/${NEW_PREFIX}_reps/${NEW_PREFIX}-${VERSION}_bwamem2.tar.gz"
-    tar -xvf "${NEW_PREFIX}-${VERSION}_bwamem2.tar.gz"
-    mv "${NEW_PREFIX}-${VERSION}_bwamem2"/* .
-    rm -r "${BIOME}-${VERSION}_bwamem2" "${NEW_PREFIX}-${VERSION}_bwamem2.tar.gz"
+    wget --continue "$BWAMEM_DIR"
+    tar -xvf "${PREFIX_BIOME}_${VERSION}_bwamem2.tar.gz"
+    mv "${PREFIX_BIOME}_${VERSION}_bwamem2"/* .
+    rm -r "${PREFIX_BIOME}_${VERSION}_bwamem2" "${PREFIX_BIOME}_${VERSION}_bwamem2.tar.gz"
 else
     echo " ***  Skipping download of bwamem2 indexed database for $BIOME"
     echo "      Note you will not be able to use --run_bwa true option on shallow-mapping pipeline for this biome"
