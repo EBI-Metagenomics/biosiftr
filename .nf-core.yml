@@ -37,6 +37,7 @@ lint:
     - .github/workflows/linting.yml
     - .gitignore
     - pyproject.toml
+    - LICENSE
   multiqc_config:
     - report_comment
   nextflow_config:
