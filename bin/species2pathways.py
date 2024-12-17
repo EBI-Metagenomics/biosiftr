@@ -1,17 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
-import sys
-
-##### This script use the species prediction to generate species pathways completeness profiles from pangenomic tables
-##### Alejandra Escobar, EMBL-EBI
-##### March 22, 2024
 
 
 def relab_parser(relab_table):
     reps_list = []
-    with open(relab_table, "r") as input_file:
+    with open(relab_table) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
@@ -25,7 +19,7 @@ def pathways_finder(reps_list, kegg_comp_db, core_mode):
     all_pathways = []
     for rep_genome in reps_list:
         db_file = kegg_comp_db + "/" + rep_genome + "_clstr_kegg_comp.tsv"
-        with open(db_file, "r") as input_file:
+        with open(db_file) as input_file:
             next(input_file)
             for line in input_file:
                 module, pangenome, core = line.rstrip().split("\t")

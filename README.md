@@ -23,28 +23,33 @@ The final output includes a species relative abundance table, Pfam and KEGG Orth
    <img src="images/workflow.png" width="90%"/>
 </p>
 
-## Install and dependencies
+## Installation
 
-This workflow was built using [Nextflow](https://www.nextflow.io/) and follows the [nf-core guidelines](https://nf-co.re/docs/contributing/guidelines). It uses Singularity containers making installation trivial and results highly reproducible. To run the pipeline in your system you need:
+This workflow was built using [Nextflow](https://www.nextflow.io/) and follows [nf-core](https://nf-co.re/) good practices. It is containerized, so users can use either Docker or Apptainer/Singularity to run the pipeline. At the moment, it doesn't support Conda environments.
 
-- Install [Nextflow version >=21.10](https://www.nextflow.io/docs/latest/getstarted.html#installation)
-- Install [Singularity](https://github.com/apptainer/singularity/blob/master/INSTALL.md)
+The pipeline requires [Nextflow version >=21.10](https://www.nextflow.io/docs/latest/getstarted.html#installation) and a container technology such as [Apptainer/Singularity](https://github.com/apptainer/singularity/blob/master/INSTALL.md) or [Docker](https://www.docker.com/).
 
-Clone the Shallow-mapping pipeline github repo:
+A Linux/macOS system with Bash and wget installed is required to download the reference databases. We will integrate this step into the pipeline itself in the near future.
+
+> **Note:**
+> The pipeline reference databases currently need to be downloaded manually by the user on a Linux/macOS system.
+
+### Required Reference Databases
+
+The first time you run the pipeline, you must provide available indexed databases for the decontamination step, MGnify genomes catalog tables, and some external tables for DRAM visuals generation. MGnify hosts most of the databases, and setup can be done in a single step by providing the locations for the decontamination and MGnify databases where the new files will be added. The directories must already exist. Please provide full paths.
+
+Get the Shallow-mapping pipeline GitHub repository:
 
 ```bash
 git clone https://github.com/EBI-Metagenomics/shallowmapping.git
 ```
-
-### Required reference databases
-
-The first time you run the pipeline you must put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify hosts most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to exist already. Please provide full paths.
 
 Consider that human-phiX decontamination reference genomes require ~15-20G of storage.
 Each MGnify catalogue genomes db occupy ~1G.
 
 ```bash
 cd shallowmapping
+
 bash bin/databases_setup.sh \
     --biome <CATALOGUE_ID> \ # Any of the MGnify catalogue ID
     --catalogue_dbs_path </path/to/catalogue_dbs> \ # Central location of shallow-mapping dbs. A directory with the biome name will be created

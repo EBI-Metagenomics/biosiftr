@@ -46,6 +46,9 @@ lint:
     - process.memory
     - process.time
     - custom_config
+    - params.max_cpus
+    - params.max_time
+    - params.max_memory
 repository_type: pipeline
 template:
   prefix: ebi-metagenomics
