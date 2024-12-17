@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
-import pysam
-import sys
 import re
+
+import pysam
 
 ##### This script process BWA results to compute per genome coverage
 ##### Alejandra Escobar, EMBL-EBI
@@ -43,7 +43,6 @@ def bam_parser(bam_file):
 
     with pysam.AlignmentFile(bam_file, "rb") as input_bam:
         for read in input_bam:
-            read_id = str(read.query_name)
             ref_genome = str(read.reference_name).split("_")[0]
             ani = (
                 (read.query_alignment_length - read.get_tag("NM"))

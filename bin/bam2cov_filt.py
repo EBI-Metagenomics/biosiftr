@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
-import pysam
-import sys
-import re
 
-##### This script process BWA results to compute relative abundance of unique mapped reads
-##### Alejandra Escobar, EMBL-EBI
-##### Nov 10, 2023
+import pysam
+
+# Constants #
+COV_THRESHOLD = 0.01
 
 
 def bam_header(bwa_bam):
@@ -37,7 +35,6 @@ def bam_parser(bam_file):
 
     with pysam.AlignmentFile(bam_file, "rb") as input_bam:
         for read in input_bam:
-            read_id = str(read.query_name)
             ref_genome = str(read.reference_name).split("_")[0]
             ani = (
                 (read.query_alignment_length - read.get_tag("NM"))
@@ -52,7 +49,7 @@ def bam_parser(bam_file):
                 reads_len_sum += read.query_length
 
                 # Unique mapping reads don't have XA tag
-                if not "XA:Z:" in read.tostring():
+                if "XA:Z:" not in read.tostring():
                     if ref_genome in unique_matches:
                         unique_matches[ref_genome] += 1
                     else:
@@ -70,9 +67,8 @@ def bam_parser(bam_file):
     return (unique_matches, ave_read_len)
 
 
-def FP_control(out_root, genomes_len, unique_matches, ave_read_len):
+def fp_control(out_root, genomes_len, unique_matches, ave_read_len):
     unique_thres01 = []
-    COV_THRESHOLD = 0.01
     total_unique = 0
     for genome in unique_matches:
         assembly_len = genomes_len[genome]
@@ -140,7 +136,7 @@ def main():
 
     (unique_matches, ave_read_len) = bam_parser(args.bwa_bam)
 
-    FP_control(out_root, genomes_len, unique_matches, ave_read_len)
+    fp_control(out_root, genomes_len, unique_matches, ave_read_len)
 
 
 if __name__ == "__main__":

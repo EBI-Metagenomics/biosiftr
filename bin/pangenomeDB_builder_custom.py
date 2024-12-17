@@ -1,15 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
-import sys
-import wget
 import gzip
-from Bio import SeqIO
-
-##### This script find the accessory genes that needs eggNOG annotation for custom genome catalogues
-##### Alejandra Escobar, EMBL-EBI
-##### July 10, 2024
+import os.path
 
 
 def pfam_parser(pfam_data):
@@ -35,7 +28,7 @@ def pfam_parser(pfam_data):
 
 def metadata_parser(drep_clstrs, derep_genomes):
     clusters = {}
-    with open(drep_clstrs, "r") as input_file:
+    with open(drep_clstrs) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split(",")
@@ -85,7 +78,7 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
             core_tab_loc = pan_loc + "core_genes.txt"
 
             # Saving the core genes ids
-            with open(core_tab_loc, "r") as input_file:
+            with open(core_tab_loc) as input_file:
                 for line in input_file:
                     gene_name = line.rstrip()
                     core_list.append(gene_name)
@@ -93,7 +86,7 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
             # Parsing the pangenomic table to keep only one accessory gene per genome
             acc_tab_loc = pan_loc + "gene_presence_absence.csv"
             pan_genes = {}
-            with open(acc_tab_loc, "r") as input_file:
+            with open(acc_tab_loc) as input_file:
                 next(input_file)
                 for line in input_file:
                     l_line = line.rstrip().split(",")
@@ -111,7 +104,7 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
                                 if len(paralogs) > 0:
                                     first_copy = paralogs[0]
                                     pan_genes[gene_key].append(first_copy)
-                            elif not "refound" in member_gen:
+                            elif "refound" not in member_gen:
                                 pan_genes[gene_key].append(member_gen)
 
             # Giving priority to genes in the representative genome
@@ -165,7 +158,7 @@ def annot_writer(reps_clusters, prokka_path, panaroo_path, pfam_desc):
 
 def gff_parser(gff_file):
     gff_dict = {}
-    with open(gff_file, "r") as input_file:
+    with open(gff_file) as input_file:
         for line in input_file:
             l_line = line.rstrip().split("\t")
             # Annotation lines have exactly 9 columns
@@ -191,7 +184,7 @@ def gff_parser(gff_file):
 
 def eggnog_parser(eggnog_out, gff_dict, pfam_desc):
     ko_annot, cazy_annot, pfam_annot = {}, {}, {}
-    with open(eggnog_out, "r") as input_file:
+    with open(eggnog_out) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
@@ -242,7 +235,7 @@ def eggnog_parser(eggnog_out, gff_dict, pfam_desc):
 
 
 def acc_gff_parser(mem_gff_out, relevant_genes, acc_gff_dict):
-    with open(mem_gff_out, "r") as input_file:
+    with open(mem_gff_out) as input_file:
         for line in input_file:
             l_line = line.rstrip().split("\t")
             # Annotation lines have exactly 9 columns
@@ -270,7 +263,7 @@ def acc_gff_parser(mem_gff_out, relevant_genes, acc_gff_dict):
 def acc_eggnog_parser(eggnog_annot, relevant_genes, acc_gff_dict, pfam_desc):
     kegg_annot, pfam_annot, cazy_annot = {}, {}, {}
 
-    with open(eggnog_annot, "r") as input_file:
+    with open(eggnog_annot) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")

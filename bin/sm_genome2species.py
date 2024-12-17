@@ -1,25 +1,18 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
-import sys
 import gzip
-from Bio import SeqIO
-
-##### This script transforms sourmash genomes relative abundance into species relative abundance
-##### Alejandra Escobar, EMBL-EBI
-##### Dec 20, 2023
 
 
 def metadata_parser(catalogue_metadata):
     ref_spec_genome = {}
-    with open(catalogue_metadata, "r") as input_file:
+    with open(catalogue_metadata) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
             rep_genome = l_line[13]
             lineage = l_line[14] + ";" + rep_genome
-            if not rep_genome in ref_spec_genome:
+            if rep_genome not in ref_spec_genome:
                 ref_spec_genome[rep_genome] = lineage.replace(" ", "_")
 
     return ref_spec_genome
