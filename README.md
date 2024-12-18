@@ -78,18 +78,18 @@ This can be any of the MGnify catalogues for which shallow-mapping databases are
 
 | Biome              | Catalogue Version                                                                    |
 | ------------------ | ------------------------------------------------------------------------------------ |
-| chicken-gut        | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut/v1.0.1)    |
-| cow-rumen          | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/cow-rumen/v1.0.1)      |
-| human-gut          | [v2.0.2 ⚠️](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-gut/v2.0.2)   |
-| human-oral         | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-oral/v1.0.1)     |
-| human-vaginal      | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-vaginal/v1.0)      |
-| honeybee-gut       | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/honeybee-gut/v1.0.1)   |
-| marine             | [v2.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/marine/v2.0)             |
-| mouse-gut          | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut/v1.0)          |
-| non-model-fish-gut | [v2.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/non-model-fish-gut/v2.0) |
-| pig-gut            | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/pig-gut/v1.0)            |
-| sheep-rumen        | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/sheep-rumen/v1.0)        |
-| zebrafish-fecal    | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/zebrafish-fecal/v1.0)    |
+| chicken-gut        | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1)    |
+| cow-rumen          | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/cow-rumen-v1-0-1)      |
+| human-gut          | [v2.0.2 ⚠️](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-gut-v2-0-2)   |
+| human-oral         | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-oral-v1-0-1)     |
+| human-vaginal      | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-vaginal-v1-0)      |
+| honeybee-gut       | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/honeybee-gut-v1-0-1)   |
+| marine             | [v2.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/marine-v2-0)             |
+| mouse-gut          | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0)          |
+| non-model-fish-gut | [v2.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/non-model-fish-gut-v2-0) |
+| pig-gut            | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/pig-gut-v1-0)            |
+| sheep-rumen        | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/sheep-rumen-v1-0)        |
+| zebrafish-fecal    | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/zebrafish-fecal-v1-0)    |
 
 > **⚠️ Note for human-gut**:
 >
