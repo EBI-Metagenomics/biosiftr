@@ -35,7 +35,7 @@ include { POSTPROC_INTEGRATOR as INTEGRA_TAXO      } from '../modules/local/post
 include { POSTPROC_INTEGRATOR as INTEGRA_KO        } from '../modules/local/postproc/integrator'
 include { POSTPROC_INTEGRATOR as INTEGRA_PFAM      } from '../modules/local/postproc/integrator'
 include { POSTPROC_INTEGRATOR as INTEGRA_MODU      } from '../modules/local/postproc/integrator'
-include { DRAM_DISTILL as INTEGRA_DRAM             } from '../modules/local/dram/distill'
+include { DRAM_DISTILL            } from '../modules/local/dram/distill'
 
 include { POSTPROC_INTEGRATOR as BWA_INT_TAXO      } from '../modules/local/postproc/integrator'
 include { POSTPROC_INTEGRATOR as BWA_INT_KO        } from '../modules/local/postproc/integrator'
@@ -192,9 +192,9 @@ workflow SHALLOWMAPPING {
 
     ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
 
-    INTEGRA_DRAM(ch_dram_community, 'sm', 'community')
+    DRAM_DISTILL(ch_dram_community, 'sm', 'community')
 
-    ch_versions = ch_versions.mix(INTEGRA_DRAM.out.versions.first())
+    ch_versions = ch_versions.mix(DRAM_DISTILL.out.versions.first())
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
     if (params.run_bwa) {
