@@ -7,18 +7,13 @@ process DRAM_DISTILL {
         'quay.io/biocontainers/dram:1.3.5--pyhdfd78af_0' }"
 
     containerOptions {
-        def arg = ""
-        switch (workflow.containerEngine) {
-            case 'singularity':
-                arg = "--bind"
-                break;
-            case 'docker':
-                arg = "--volume"
-                break;
+        def arg = "--volume"
+        if (workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') {
+            arg = "--bind"
         }
-        mounts = [
-            "${params.shallow_dbs_path}/external_dbs/dram_distill_dbs/:/data/",
-            "${params.shallow_dbs_path}/external_dbs/dram_distill_dbs/CONFIG:/usr/local/lib/python3.10/site-packages/mag_annotator/CONFIG"
+        def mounts = [
+            "${params.reference_dbs}/dram_dbs/:/data/",
+            "${params.reference_dbs}/dram_dbs/DRAM_CONFIG.json:/usr/local/lib/python3.10/site-packages/mag_annotator/CONFIG"
         ]
         return "${arg} " + mounts.join(" ${arg} ")
     }
