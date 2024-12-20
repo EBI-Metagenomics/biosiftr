@@ -27,18 +27,18 @@
                     "type": "string",
                     "description": "This can be any of the MGnify catalogues for which shallow-mapping databases are currently available",
                     "enum": [
-                        "chicken-gut-v1-0-1",
-                        "cow-rumen-v1-0-1",
-                        "human-gut-v2-0-2",
-                        "human-oral-v1-0-1",
-                        "human-vaginal-v1-0",
-                        "honeybee-gut-v1-0-1",
-                        "marine-v2-0",
-                        "mouse-gut-v1-0",
-                        "non-model-fish-gut-v2-0",
-                        "pig-gut-v1-0",
-                        "sheep-rumen-v1-0",
-                        "zebrafish-fecal-v1-0"
+                        "chicken-gut-v1.0.1",
+                        "cow-rumen-v1.0.1",
+                        "human-gut-v2.0.2",
+                        "human-oral-v1.0.1",
+                        "human-vaginal-v1.0",
+                        "honeybee-gut-v1.0.1",
+                        "marine-v2.0",
+                        "mouse-gut-v1.0",
+                        "non-model-fish-gut-v2.0",
+                        "pig-gut-v1.0",
+                        "sheep-rumen-v1.0",
+                        "zebrafish-fecal-v1.0"
                     ]
                 },
                 "run_bwa": {
@@ -73,23 +73,23 @@
             }
         },
         "reference_databases": {
-            "title": "Reference databases indexed",
+            "title": "Reference databases",
             "type": "object",
             "fa_icon": "fas fa-database",
             "description": "The first time you run the pipeline you need to put available indexed databases for the decontamination step, MGnify genomes catalogue tables, and some external tables for DRAM visuals generation. MGnify host most of the databases and setting up can be done in a single step by providing the location for decontamination and MGnify databases where the new files will be added. The directories have to already exists. Please provide full paths.",
-            "required": ["shallow_dbs_path", "decont_reference_paths"],
+            "required": ["reference_dbs", "decontamination_indexes"],
             "properties": {
-                "shallow_dbs_path": {
+                "reference_dbs": {
                     "type": "string",
                     "format": "directory-path",
                     "fa_icon": "fas fa-folder",
-                    "description": "Central location for the MGnify Genomes catalogue reference."
+                    "description": "Path to the folder containing the pre-processed MGnify genomes databases and the DRAM Distill database. If the folder is empty or does not exist, the pipeline will automatically download the required databases and cache them for future use. Example: /path/to/reference_dbs."
                 },
-                "decont_reference_paths": {
+                "decontamination_indexes": {
                     "type": "string",
-                    "fa_icon": "fas fa-folder",
                     "format": "directory-path",
-                    "description": "Central location of reference genomes for decontamination. Other bwamem2 databases can exist here."
+                    "fa_icon": "fas fa-folder",
+                    "description": "Path to the folder containing the BWAMEM2 indexes used for cleaning and decontaminating the reads. Ensure that the indexes are properly formatted. Example: /path/to/decontamination_indexes."
                 }
             }
         },

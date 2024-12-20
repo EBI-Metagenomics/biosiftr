@@ -1,3 +1,2 @@
 sample,fastq_1,fastq_2
-single_test,https://github.com/EBI-Metagenomics/shallowmapping/raw/dev/tests/data/test2_R1.fastq.gz
-paired_test,https://github.com/EBI-Metagenomics/shallowmapping/raw/dev/tests/data/test2_R1.fastq.gz,https://github.com/EBI-Metagenomics/shallowmapping/raw/dev/tests/data/test2_R2.fastq.gz
+test,https://github.com/EBI-Metagenomics/shallowmapping/raw/refs/heads/update/dbs_download/tests/data/reads_MGYG000303700_1.fastq.gz,https://github.com/EBI-Metagenomics/shallowmapping/raw/refs/heads/update/dbs_download/tests/data/reads_MGYG000303700_2.fastq.gz
