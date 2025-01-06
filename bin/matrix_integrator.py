@@ -1,17 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
-import sys
-from Bio import SeqIO
-
-##### This script integrates multiple count matices into a single output
-##### Alejandra Escobar, EMBL-EBI
-##### Jan 12, 2024
 
 
 def matrix_parser(matrix_file, features_dict, all_features, all_samples):
-    with open(matrix_file, "r") as input_file:
+    with open(matrix_file) as input_file:
         samples_list = input_file.readline().strip().split("\t")
         samples_list.pop(0)
         all_samples = all_samples + samples_list

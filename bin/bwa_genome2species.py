@@ -1,24 +1,17 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
-import sys
-from Bio import SeqIO
-
-##### This script transforms BWA genomes relative abundance into species relative abundance
-##### Alejandra Escobar, EMBL-EBI
-##### Dec 18, 2023
 
 
 def metadata_parser(catalogue_metadata):
     ref_spec_genome = {}
-    with open(catalogue_metadata, "r") as input_file:
+    with open(catalogue_metadata) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
             genome = l_line[13]
             lineage = l_line[14] + ";" + genome
-            if not genome in ref_spec_genome:
+            if genome not in ref_spec_genome:
                 ref_spec_genome[genome] = lineage
 
     return ref_spec_genome
@@ -27,7 +20,7 @@ def metadata_parser(catalogue_metadata):
 def aggregate_species(genomes_relab, ref_spec_genome, out_name):
     species_reads = {}
     total_reads = 0
-    with open(genomes_relab, "r") as input_file:
+    with open(genomes_relab) as input_file:
         next(input_file)
         for line in input_file:
             (

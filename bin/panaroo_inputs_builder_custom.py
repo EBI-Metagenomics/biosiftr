@@ -2,22 +2,11 @@
 
 import argparse
 import os.path
-import sys
-import wget
-import gzip
-import shutil
-import subprocess
-from Bio import SeqIO
-
-
-##### This script prepare the inputs to launch panaroo on custom databases
-##### Alejandra Escobar, EMBL-EBI
-##### July 3, 2024
 
 
 def metadata_parser(drep_clstrs, derep_genomes):
     clusters = {}
-    with open(drep_clstrs, "r") as input_file:
+    with open(drep_clstrs) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split(",")

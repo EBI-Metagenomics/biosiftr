@@ -1,14 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
-import sys
 import gzip
-from Bio import SeqIO
-
-##### This script use the species prediction to generate functional tables from the pangenomic profiles
-##### Alejandra Escobar, EMBL-EBI
-##### Jan 11, 2024
 
 
 def pfam_parser(pfam_data):
@@ -35,14 +28,14 @@ def pfam_parser(pfam_data):
 
 def dram_parser(dram_form):
     dram_desc = {}
-    with open(dram_form, "r") as input_file:
+    with open(dram_form) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
             gene_id = l_line[0]
             gene_description = l_line[1].replace('"', "")
             if gene_id in dram_desc:
-                if not gene_description in dram_desc[gene_id]:
+                if gene_description not in dram_desc[gene_id]:
                     dram_desc[gene_id].append(gene_description)
             else:
                 dram_desc[gene_id] = [gene_description]
@@ -52,7 +45,7 @@ def dram_parser(dram_form):
 def relab_parser(relab_table):
     taxonomy = {}
     reps_list = []
-    with open(relab_table, "r") as input_file:
+    with open(relab_table) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
@@ -82,7 +75,7 @@ def functions_finder_pan(reps_list, db_path):
         per_gene_dict[rep_genome] = []
         pan_kos = []
         pan_pfams = []
-        with open(db_file, "r") as input_file:
+        with open(db_file) as input_file:
             next(input_file)
             next(input_file)
             for line in input_file:
@@ -113,7 +106,7 @@ def functions_finder_pan(reps_list, db_path):
                         kegg_list = [kegg]
                     pan_kos = pan_kos + kegg_list
                     for current_ko in kegg_list:
-                        if not current_ko in species_kos[rep_genome]:
+                        if current_ko not in species_kos[rep_genome]:
                             species_kos[rep_genome].append(current_ko)
 
                 if pfam != "-":
@@ -123,7 +116,7 @@ def functions_finder_pan(reps_list, db_path):
                         pfam_list = [pfam]
                     pan_pfams = pan_pfams + pfam_list
                     for current_pfam in pfam_list:
-                        if not current_pfam in species_pfams[rep_genome]:
+                        if current_pfam not in species_pfams[rep_genome]:
                             species_pfams[rep_genome].append(current_pfam)
 
         pan_kos = list(set(pan_kos))
@@ -172,7 +165,7 @@ def functions_finder_core(reps_list, db_path):
         per_gene_dict[rep_genome] = []
         pan_kos = []
         pan_pfams = []
-        with open(db_file, "r") as input_file:
+        with open(db_file) as input_file:
             next(input_file)
             next(input_file)
             for line in input_file:
@@ -204,7 +197,7 @@ def functions_finder_core(reps_list, db_path):
                             kegg_list = [kegg]
                         pan_kos = pan_kos + kegg_list
                         for current_ko in kegg_list:
-                            if not current_ko in species_kos[rep_genome]:
+                            if current_ko not in species_kos[rep_genome]:
                                 species_kos[rep_genome].append(current_ko)
 
                     if pfam != "-":
@@ -214,7 +207,7 @@ def functions_finder_core(reps_list, db_path):
                             pfam_list = [pfam]
                         pan_pfams = pan_pfams + pfam_list
                         for current_pfam in pfam_list:
-                            if not current_pfam in species_pfams[rep_genome]:
+                            if current_pfam not in species_pfams[rep_genome]:
                                 species_pfams[rep_genome].append(current_pfam)
 
         pan_kos = list(set(pan_kos))

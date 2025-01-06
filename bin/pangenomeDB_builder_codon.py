@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
-import sys
-import wget
 import gzip
-from Bio import SeqIO
+import os.path
 
-##### This script find the accessory genes that needs eggNOG annotation in codon catalogues
-##### Alejandra Escobar, EMBL-EBI
-##### March 27, 2024
+from Bio import SeqIO
 
 
 def pfam_parser(pfam_data):
@@ -35,7 +30,7 @@ def pfam_parser(pfam_data):
 
 def metadata_parser(catalogue_metadata):
     reps_clusters = {}
-    with open(catalogue_metadata, "r") as input_file:
+    with open(catalogue_metadata) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
@@ -67,7 +62,7 @@ def accessory_writer(reps_clusters, loc_prefix):
             # Parsing the presence/absence tab
             r_tab_loc = pan_loc + "gene_presence_absence.Rtab"
             accessory_genes = []
-            with open(r_tab_loc, "r") as input_file:
+            with open(r_tab_loc) as input_file:
                 header = input_file.readline().strip().split("\t")
                 index = header.index(rep)
                 for line in input_file:
@@ -125,7 +120,7 @@ def annot_writer(reps_clusters, loc_prefix, pfam_desc):
             core_tab_loc = pan_loc + "core_genes.txt"
 
             # Saving the core genes ids
-            with open(core_tab_loc, "r") as input_file:
+            with open(core_tab_loc) as input_file:
                 for line in input_file:
                     gene_name = line.rstrip()
                     core_list.append(gene_name)
@@ -137,7 +132,7 @@ def annot_writer(reps_clusters, loc_prefix, pfam_desc):
             accesory_genes = {}
             relevant_members = []
             relevant_genes = []
-            with open(acc_tab_loc, "r") as input_file:
+            with open(acc_tab_loc) as input_file:
                 next(input_file)
                 for line in input_file:
                     l_line = line.rstrip().split(",")
@@ -152,7 +147,7 @@ def annot_writer(reps_clusters, loc_prefix, pfam_desc):
                             else:
                                 prefix = member_gen.split("_")[0]
                                 if prefix != rep:
-                                    if not gene_key in accesory_genes:
+                                    if gene_key not in accesory_genes:
                                         relevant_members.append(prefix)
                                         accesory_genes[gene_key] = member_gen
                                         relevant_genes.append(member_gen)
@@ -190,7 +185,7 @@ def annot_writer(reps_clusters, loc_prefix, pfam_desc):
 
 def gff_parser(gff_file):
     gff_dict = {}
-    with open(gff_file, "r") as input_file:
+    with open(gff_file) as input_file:
         for line in input_file:
             l_line = line.rstrip().split("\t")
             # Annotation lines have exactly 9 columns
@@ -216,7 +211,7 @@ def gff_parser(gff_file):
 
 def eggnog_parser(eggnog_out, gff_dict, pfam_desc):
     ko_annot, cazy_annot, pfam_annot = {}, {}, {}
-    with open(eggnog_out, "r") as input_file:
+    with open(eggnog_out) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
@@ -297,7 +292,7 @@ def acc_eggnog_parser(eggnog_annot, accesory_genes, acc_gff_dict, pfam_desc):
     for pan_gene, genome_gene in accesory_genes.items():
         rev_accesory_genes[genome_gene] = pan_gene
     kegg_annot, pfam_annot, cazy_annot = {}, {}, {}
-    with open(eggnog_annot, "r") as input_file:
+    with open(eggnog_annot) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")

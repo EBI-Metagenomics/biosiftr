@@ -1,23 +1,14 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
-import sys
-import wget
 import gzip
+import os.path
 import shutil
-import subprocess
-from Bio import SeqIO
-
-
-##### This script prepare the inputs to launch panaroo on the human-gut catalogue v2.0
-##### Alejandra Escobar, EMBL-EBI
-##### June 21, 2024
 
 
 def metadata_parser(catalogue_metadata):
     reps_clusters = {}
-    with open(catalogue_metadata, "r") as input_file:
+    with open(catalogue_metadata) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")

@@ -1,18 +1,12 @@
 #!/usr/bin/env python
 
 import argparse
-import os.path
-import sys
-
-##### This script integrates the output of the kegg completeness tool to build a DB at pangenome level
-##### Alejandra Escobar, EMBL-EBI
-##### March 21, 2024
 
 
 def core_parser(core_table):
     all_modules = []
     core_values = {}
-    with open(core_table, "r") as input_file:
+    with open(core_table) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
@@ -27,7 +21,7 @@ def core_parser(core_table):
 
 def pan_parser(all_modules, pan_table):
     pan_values = {}
-    with open(pan_table, "r") as input_file:
+    with open(pan_table) as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")

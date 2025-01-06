@@ -1,0 +1,31 @@
+#module	pangenome	core
+M00855|Glycogen degradation, glycogen => glucose-6P	50.0	50.0
+M00549|Nucleotide sugar biosynthesis, glucose => UDP-glucose	33.33	33.33
+M00579|Phosphate acetyltransferase-acetate kinase pathway, acetyl-CoA => acetate	50.0	50.0
+M00140|C1-unit interconversion, prokaryotes	33.33	33.33
+M00002|Glycolysis, core module involving three-carbon compounds	100.0	100.0
+M00649|Multidrug resistance, efflux pump AdeABC	33.33	33.33
+M00089|Triacylglycerol biosynthesis	25.0	25.0
+M00345|Formaldehyde assimilation, ribulose monophosphate pathway	33.33	33.33
+M00909|UDP-N-acetyl-D-glucosamine biosynthesis, prokaryotes, glucose => UDP-GlcNAc	20.0	20.0
+M00001|Glycolysis (Embden-Meyerhof pathway), glucose => pyruvate	77.78	77.78
+M00565|Trehalose biosynthesis, D-glucose 1P => trehalose	33.33	33.33
+M00357|Methanogenesis, acetate => methane	10.0	10.0
+M00308|Semi-phosphorylative Entner-Doudoroff pathway, gluconate => glycerate-3P	25.0	25.0
+M00129|Ascorbate biosynthesis, animals, glucose-1P => ascorbate	14.29	14.29
+M00552|D-galactonate degradation, De Ley-Doudoroff pathway, D-galactonate => glycerate-3P	40.0	40.0
+M00049|Adenine ribonucleotide biosynthesis, IMP => ADP,ATP	25.0	25.0
+M00086|beta-Oxidation, acyl-CoA synthesis	100.0	100.0
+M00165|Reductive pentose phosphate cycle (Calvin cycle)	63.64	63.64
+M00035|Methionine degradation	25.0	0
+M00632|Galactose degradation, Leloir pathway, galactose => alpha-D-glucose-1P	25.0	25.0
+M00346|Formaldehyde assimilation, serine pathway	11.11	11.11
+M00377|Reductive acetyl-CoA pathway (Wood-Ljungdahl pathway)	14.29	14.29
+M00004|Pentose phosphate pathway (Pentose phosphate cycle)	58.33	58.33
+M00726|Cationic antimicrobial peptide (CAMP) resistance, lysyl-phosphatidylglycerol (L-PG) synthase MprF	33.33	33.33
+M00052|Pyrimidine ribonucleotide biosynthesis, UMP => UDP/UTP,CDP/CTP	33.33	33.33
+M00007|Pentose phosphate pathway, non-oxidative phase, fructose 6P => ribose 5P	75.0	75.0
+M00003|Gluconeogenesis, oxaloacetate => fructose-6P	78.57	78.57
+M00121|Heme biosynthesis, plants and bacteria, glutamate => heme	10.0	10.0
+M00854|Glycogen biosynthesis, glucose-1P => glycogen/starch	50.0	50.0
+M00344|Formaldehyde assimilation, xylulose monophosphate pathway	25.0	25.0
