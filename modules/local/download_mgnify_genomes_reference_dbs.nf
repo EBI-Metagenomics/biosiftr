@@ -17,7 +17,7 @@ process DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS {
 
     script:
     def matcher = biome =~ /(.+?)(-v[0-9.\.]+)?$/
-    println "matcher"
+    println "${matcher}"
 
     def biome_name = matcher[0][1]
     def biome_version = matcher[0][2] ? matcher[0][2].substring(1) : null
