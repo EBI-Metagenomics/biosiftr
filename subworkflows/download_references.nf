@@ -20,7 +20,6 @@ workflow DOWNLOAD_REFERENCES {
     dram_dbs_dir = file("${params.reference_dbs}/dram_dbs")
 
     biome_folder = file("${params.reference_dbs}/${biome}")
-    println "${biome_folder}"
 
     biome_sourmash_db_file = file("${params.reference_dbs}/${biome}/sourmash_species_representatives_k21.sbt.zip")
     biome_genomes_metadata_file = file("${params.reference_dbs}/${biome}/genomes-all_metadata.tsv")
@@ -40,12 +39,19 @@ workflow DOWNLOAD_REFERENCES {
         : DOWNLOAD_HUMAN_PHIX_BWAMEM2_INDEX().out.human_phix_index.first()
 
     // Check if all required files exist for the biome
+    println "biome folder: ${biome_folder}"
+    println "sourmash: ${biome_sourmash_db_file}"
+    println "metadata: ${biome_genomes_metadata_file}"
+    println "functions: ${biome_pangenome_functional_anns_db_dir}"
+    println "kegg: ${biome_kegg_completeness_db_dir}"
+    println "bwa index: ${biome_bwa_db_files}"
+
     if ( biome_folder.exists() && biome_sourmash_db_file.exists() && biome_genomes_metadata_file.exists() && biome_pangenome_functional_anns_db_dir.exists() && biome_kegg_completeness_db_dir.exists() && (!bwamem2_mode || biome_bwa_db_files.size() == 0)) {
         biome_sourmash_db = biome_sourmash_db_file
         biome_genomes_metadata = biome_genomes_metadata_file
         biome_pangenome_functional_anns_db = biome_pangenome_functional_anns_db_dir
         biome_kegg_completeness_db = biome_kegg_completeness_db_dir
-        biome_bwa_db = bwamem2_mode ? [[id: host_name], biome_bwa_db_files.collect()] : Channel.empty()
+        biome_bwa_db = bwamem2_mode ? biome_bwa_db_files.collect() : Channel.empty()
     }
     else {
         DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS(biome, bwamem2_mode)
@@ -54,7 +60,7 @@ workflow DOWNLOAD_REFERENCES {
         biome_genomes_metadata = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.genomes_metadata_tsv.first()
         biome_pangenome_functional_anns_db = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.pangenome_functional_anns_db.first()
         biome_kegg_completeness_db = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.kegg_completeness_db.first()
-        biome_bwa_db = bwamem2_mode ? [[id: host_name], DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.bwamem2_index.collect()] : Channel.empty()
+        biome_bwa_db = bwamem2_mode ? DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.bwamem2_index.collect() : Channel.empty()
     }
 
     human_phix_index_ch = channel.from( human_phix_index ).collect()
