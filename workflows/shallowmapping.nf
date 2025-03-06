@@ -106,8 +106,7 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
     /* Download the reference databases */
-    def host_name = params.biome.split('-')[0]
-    DOWNLOAD_REFERENCES(params.biome, params.run_bwa, host_name)
+    DOWNLOAD_REFERENCES(params.biome, params.run_bwa)
 
     // Creating channel for decontamination with human + phix genomes
     HUMAN_PHIX_DECONT(FASTP.out.reads, DOWNLOAD_REFERENCES.out.human_phix_index_ch)
@@ -123,6 +122,7 @@ workflow SHALLOWMAPPING {
     /* download them from the FTP server                             */
     /*****************************************************************/
 
+    def host_name = params.biome.split('-')[0]
     if (params.biome.contains('human')) {
         hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
     }
