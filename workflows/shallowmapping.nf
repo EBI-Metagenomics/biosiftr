@@ -198,9 +198,7 @@ workflow SHALLOWMAPPING {
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
     if (params.run_bwa) {
-
-        genomes_ref = Channel
-            .fromPath(DOWNLOAD_REFERENCES.out.biome_bwa_db)
+        genomes_ref = DOWNLOAD_REFERENCES.out.biome_bwa_db
             .collect()
             .map { db_files ->
                 [[id: host_name], db_files]
