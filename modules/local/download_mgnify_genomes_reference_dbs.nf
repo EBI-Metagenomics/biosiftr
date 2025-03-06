@@ -19,6 +19,11 @@ process DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS {
     def matcher = biome =~ /(.+?)(-v[0-9.\.]+)?$/
     def biome_name = matcher[0][1]
     def biome_version = matcher[0][2] ? matcher[0][2].substring(1) : null
+
+    if (biome_version) {
+        biome_version = biome_version.replace('-', '.')
+    }
+
     if (!biome_version) {
         exit("Error the biome version of ${biome} can't be parsed.")
     }
