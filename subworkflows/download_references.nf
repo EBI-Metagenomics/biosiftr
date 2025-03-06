@@ -6,6 +6,7 @@ workflow DOWNLOAD_REFERENCES {
     take:
     biome
     bwamem2_mode
+    host_name
 
     main:
     dram_dbs = Channel.empty()
