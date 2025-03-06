@@ -20,6 +20,7 @@ workflow DOWNLOAD_REFERENCES {
     dram_dbs_dir = file("${params.reference_dbs}/dram_dbs")
 
     biome_folder = file("${params.reference_dbs}/${biome}")
+    println "${biome_folder}"
 
     biome_sourmash_db_file = file("${params.reference_dbs}/${biome}/sourmash_species_representatives_k21.sbt.zip")
     biome_genomes_metadata_file = file("${params.reference_dbs}/${biome}/genomes-all_metadata.tsv")
