@@ -22,13 +22,9 @@ process DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS {
 
     if (biome_version) {
         biome_version = biome_version.replace('-', '.')
-    }
-
-    if (!biome_version) {
+    } else {
         exit("Error the biome version of ${biome} can't be parsed.")
     }
-
-    println "Biome name: ${biome_name}, Biome version: ${biome_version}"
 
     // MGnify genomes catalogue data //
     // Example: https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/honeybee-gut/v1.0.1/
