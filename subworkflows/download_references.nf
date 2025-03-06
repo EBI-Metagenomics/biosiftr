@@ -41,17 +41,16 @@ workflow DOWNLOAD_REFERENCES {
     // Check if all required files exist for the biome
 
     if ( biome_folder.exists() && biome_sourmash_db_file.exists() && biome_genomes_metadata_file.exists() && biome_pangenome_functional_anns_db_dir.exists() && biome_kegg_completeness_db_dir.exists() && (!bwamem2_mode || biome_bwa_db_files.exists() )) {
+        println "Genomes databases found in ${biome_folder}"
         biome_sourmash_db = biome_sourmash_db_file
         biome_genomes_metadata = biome_genomes_metadata_file
         biome_pangenome_functional_anns_db = biome_pangenome_functional_anns_db_dir
         biome_kegg_completeness_db = biome_kegg_completeness_db_dir
         biome_bwa_db = bwamem2_mode ? biome_bwa_db_files.collect() : Channel.empty()
-        println "Genomes databases found"
-    }
-    else {
+    } else {
         println "Genomes databases NOT found. Running sbwf to download DBs"
-        DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS(biome, bwamem2_mode)
 
+        DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS(biome, bwamem2_mode)
         biome_sourmash_db = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.sourmash_db.first()
         biome_genomes_metadata = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.genomes_metadata_tsv.first()
         biome_pangenome_functional_anns_db = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.pangenome_functional_anns_db.first()
