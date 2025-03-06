@@ -39,12 +39,6 @@ workflow DOWNLOAD_REFERENCES {
         : DOWNLOAD_HUMAN_PHIX_BWAMEM2_INDEX().out.human_phix_index.first()
 
     // Check if all required files exist for the biome
-    println "biome folder: ${biome_folder}"
-    println "sourmash: ${biome_sourmash_db_file}"
-    println "metadata: ${biome_genomes_metadata_file}"
-    println "functions: ${biome_pangenome_functional_anns_db_dir}"
-    println "kegg: ${biome_kegg_completeness_db_dir}"
-    println "bwa index: ${biome_bwa_db_files}"
 
     if ( biome_folder.exists() && biome_sourmash_db_file.exists() && biome_genomes_metadata_file.exists() && biome_pangenome_functional_anns_db_dir.exists() && biome_kegg_completeness_db_dir.exists() && (!bwamem2_mode || biome_bwa_db_files.size() == 0)) {
         biome_sourmash_db = biome_sourmash_db_file
@@ -52,8 +46,10 @@ workflow DOWNLOAD_REFERENCES {
         biome_pangenome_functional_anns_db = biome_pangenome_functional_anns_db_dir
         biome_kegg_completeness_db = biome_kegg_completeness_db_dir
         biome_bwa_db = bwamem2_mode ? biome_bwa_db_files.collect() : Channel.empty()
+        println "Genomes databases found"
     }
     else {
+        println "Genomes databases NOT found. Running sbwf to download DBs"
         DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS(biome, bwamem2_mode)
 
         biome_sourmash_db = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.sourmash_db.first()
