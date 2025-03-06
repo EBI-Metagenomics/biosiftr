@@ -16,8 +16,7 @@ process DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS {
     tuple val(biome), path("bwamem2_index/")                              , emit: bwamem2_index, optional: true
 
     script:
-    def matcher = biome =~ /(.+?)(-v[0-9.\.]+)?$/
-    println "${matcher}"
+    def matcher = biome =~ /(.+?)(-v[0-9]+-[0-9]+)?$/
 
     def biome_name = matcher[0][1]
     def biome_version = matcher[0][2] ? matcher[0][2].substring(1) : null
