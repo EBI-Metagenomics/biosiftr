@@ -40,7 +40,7 @@ workflow DOWNLOAD_REFERENCES {
 
     // Check if all required files exist for the biome
 
-    if ( biome_folder.exists() && biome_sourmash_db_file.exists() && biome_genomes_metadata_file.exists() && biome_pangenome_functional_anns_db_dir.exists() && biome_kegg_completeness_db_dir.exists() && (!bwamem2_mode || biome_bwa_db_files.size() == 0)) {
+    if ( biome_folder.exists() && biome_sourmash_db_file.exists() && biome_genomes_metadata_file.exists() && biome_pangenome_functional_anns_db_dir.exists() && biome_kegg_completeness_db_dir.exists() && (!bwamem2_mode || biome_bwa_db_files.exists() )) {
         biome_sourmash_db = biome_sourmash_db_file
         biome_genomes_metadata = biome_genomes_metadata_file
         biome_pangenome_functional_anns_db = biome_pangenome_functional_anns_db_dir
