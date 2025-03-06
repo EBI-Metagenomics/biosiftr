@@ -106,7 +106,8 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
     /* Download the reference databases */
-    DOWNLOAD_REFERENCES(params.biome, params.run_bwa)
+    def host_name = params.biome.split('-')[0]
+    DOWNLOAD_REFERENCES(params.biome, params.run_bwa, host_name)
 
     // Creating channel for decontamination with human + phix genomes
     HUMAN_PHIX_DECONT(FASTP.out.reads, DOWNLOAD_REFERENCES.out.human_phix_index_ch)
@@ -116,12 +117,11 @@ workflow SHALLOWMAPPING {
     // Creating channel for decontamination with host when biome != human
 
     /*****************************************************************/
-    /* DECONTAMIONATION using the biome cannonical host organism     */
+    /* DECONTAMINATION using the biome canonical host organism       */
     /* For example, for cow-rumen-v1.0.1, it will use the cow genome */
     /* MGnify hosts these genomes on our FTP, and the pipeline will  */
     /* download them from the FTP server                             */
     /*****************************************************************/
-    def host_name = params.biome.split('-')[0]
 
     if (params.biome.contains('human')) {
         hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
