@@ -116,13 +116,13 @@ workflow SHALLOWMAPPING {
     // Creating channel for decontamination with host when biome != human
 
     /*****************************************************************/
-    /* DECONTAMIONATION using the biome cannonical host organism     */
+    /* DECONTAMINATION using the biome canonical host organism       */
     /* For example, for cow-rumen-v1.0.1, it will use the cow genome */
     /* MGnify hosts these genomes on our FTP, and the pipeline will  */
     /* download them from the FTP server                             */
     /*****************************************************************/
-    def host_name = params.biome.split('-')[0]
 
+    def host_name = params.biome.split('-')[0]
     if (params.biome.contains('human')) {
         hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
     }
@@ -198,9 +198,7 @@ workflow SHALLOWMAPPING {
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
     if (params.run_bwa) {
-
-        genomes_ref = Channel
-            .fromPath(DOWNLOAD_REFERENCES.out.biome_bwa_db)
+        genomes_ref = DOWNLOAD_REFERENCES.out.biome_bwa_db
             .collect()
             .map { db_files ->
                 [[id: host_name], db_files]
