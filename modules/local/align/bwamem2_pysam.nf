@@ -18,7 +18,7 @@ process ALIGN_BWAMEM2 {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def cov = '0.1'
-    if (sp_richness > 100) {
+    if (sp_richness > 300) {
         cov = '0.01'
     }
     
@@ -41,7 +41,7 @@ process ALIGN_BWAMEM2 {
     bam2cov_filt.py \\
         --bwa_bam ${prefix}_sorted.bam \\
         --cov_thres ${cov} \\
-        --prefix ${prefix}_u_relab
+        --prefix ${prefix}_${cov}_u_relab
 
     echo " ---> removing bam file"
     rm *.bam *.bai
