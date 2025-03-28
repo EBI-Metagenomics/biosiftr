@@ -6,6 +6,7 @@ process ALIGN_BWAMEM2 {
     input:
     tuple val(meta), path(reads)
     tuple val(meta2), path(index)
+    val(cov)
 
     output:
     tuple val(meta), path("*.tsv"), emit: cov_file
@@ -33,7 +34,8 @@ process ALIGN_BWAMEM2 {
     echo " ---> processing bam file"
     bam2cov_filt.py \\
         --bwa_bam ${prefix}_sorted.bam \\
-        --prefix ${prefix}_u_relab_01
+        --cov_thres $cov \\
+        --prefix ${prefix}_u_relab
 
     echo " ---> removing bam file"
     rm *.bam *.bai
@@ -50,7 +52,7 @@ process ALIGN_BWAMEM2 {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_u_relab_01.tsv
+    touch ${prefix}_u_relab.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         bwamem2: \$(echo \$(bwa-mem2 version 2>&1) | sed 's/.* //')

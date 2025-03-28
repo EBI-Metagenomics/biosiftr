@@ -197,6 +197,14 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(DRAM_DISTILL.out.versions.first())
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
+    // bwamem2 optimisation depends on the number of species detected by sourmash
+
+    /************************************************************************************/
+    /* bwamem2 optimisation depends on the number of species detected by sourmash       */
+    /* If species number is >= 100, then coverage threshold = 0.01                      */
+    /* If species number is < 100, then coverage threshold = 0.1                        */
+    /************************************************************************************/
+
     if (params.run_bwa) {
         genomes_ref = DOWNLOAD_REFERENCES.out.biome_bwa_db
             .collect()
@@ -204,11 +212,22 @@ workflow SHALLOWMAPPING {
                 [[id: host_name], db_files]
             }
 
-        ALIGN_BWAMEM2(hq_reads, genomes_ref)
-        ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
+
+        // Mapping reads and filtering positive genomes according with mapping coverage threshold
+        // Branching based on Sourmash prediction of species richness (number of lines)
+
+        species_richness = file(POSTPROC_SOURMASHTAXO.out.sm_taxo).count()
+
+        if (species_richness > 100) {
+            ALIGN_BWAMEM2(hq_reads, genomes_ref, '0.01')
+            ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
+        } else {
+            ALIGN_BWAMEM2(hq_reads, genomes_ref, '0.1')
+            ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
+        }
+
 
         POSTPROC_BWATAXO(ALIGN_BWAMEM2.out.cov_file, DOWNLOAD_REFERENCES.out.biome_genomes_metadata)
-
         ch_versions = ch_versions.mix(POSTPROC_BWATAXO.out.versions.first())
 
         if (params.core_mode) {

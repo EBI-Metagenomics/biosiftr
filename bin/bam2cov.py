@@ -1,15 +1,28 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-import argparse
-import re
-
-import pysam
+# Copyright 2025 EMBL - European Bioinformatics Institute
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 ##### This script process BWA results to compute per genome coverage
 ##### Alejandra Escobar, EMBL-EBI
 ##### v1.0 Nov 10, 2023
 ##### v1.1 Mar 13, 2024
 #####   Function to calculate relative abundance added
+
+import argparse
+import re
+import pysam
 
 
 def bam_header(bwa_bam):

@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Copyright 2025 EMBL - European Bioinformatics Institute
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 
 import argparse
-
 import pysam
-
-# Constants #
-COV_THRESHOLD = 0.01
-
 
 def bam_header(bwa_bam):
     genomes_len = {}
@@ -67,8 +77,8 @@ def bam_parser(bam_file):
     return (unique_matches, ave_read_len)
 
 
-def fp_control(out_root, genomes_len, unique_matches, ave_read_len):
-    unique_thres01 = []
+def fp_control(out_root, genomes_len, unique_matches, ave_read_len, cov):
+    unique_thres = []
     total_unique = 0
     for genome in unique_matches:
         assembly_len = genomes_len[genome]
@@ -76,9 +86,9 @@ def fp_control(out_root, genomes_len, unique_matches, ave_read_len):
         genome_coverage = (float(mapped_reads) * float(ave_read_len)) / float(
             assembly_len
         )
-        if genome_coverage >= COV_THRESHOLD:
+        if genome_coverage >= float(cov):
             total_unique = total_unique + mapped_reads
-            unique_thres01.append(genome)
+            unique_thres.append(genome)
 
     with open(out_root + ".tsv", "w") as unique_out:
         unique_out.write(
@@ -87,7 +97,7 @@ def fp_control(out_root, genomes_len, unique_matches, ave_read_len):
             )
             + "\n"
         )
-        for genome in unique_thres01:
+        for genome in unique_thres:
             assembly_len = genomes_len[genome]
             mapped_reads = unique_matches[genome]
             genome_coverage = (float(mapped_reads) * float(ave_read_len)) / float(
@@ -110,7 +120,7 @@ def fp_control(out_root, genomes_len, unique_matches, ave_read_len):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="This script process the bam file generated using bwa-mem2 with the flag -M. The bam file has to be filtered using -F4 -F256 flags, then sorted and indexed. The output of this script is a table of relative abundance of genomes based on unique mapping reads. Only genomes having a mean depth coverage >0.01 are considered."
+        description="This script process the bam file generated using bwa-mem2 with the flag -M. The bam file has to be filtered using -F4 -F256 flags, then sorted and indexed. The output of this script is a table of relative abundance of genomes based on unique mapping reads. Only genomes having a mean depth coverage larger that `cov_thres` are considered."
     )
     parser.add_argument(
         "--bwa_bam",
@@ -119,9 +129,15 @@ def main():
         required=True,
     )
     parser.add_argument(
+        "--cov_thres",
+        type=str,
+        help="Coverage threshold cut-off",
+        required=True,
+    )
+    parser.add_argument(
         "--prefix",
         type=str,
-        help="To name the output files. Default = u_relab_01",
+        help="To name the output files. Default = u_relab",
         required=False,
     )
     args = parser.parse_args()
@@ -129,14 +145,14 @@ def main():
     if args.prefix:
         out_root = args.prefix
     else:
-        out_root = "u_relab_01"
+        out_root = "u_relab"
 
     ### Calling functions
     (genomes_len) = bam_header(args.bwa_bam)
 
     (unique_matches, ave_read_len) = bam_parser(args.bwa_bam)
 
-    fp_control(out_root, genomes_len, unique_matches, ave_read_len)
+    fp_control(out_root, genomes_len, unique_matches, ave_read_len, args.cov_thres)
 
 
 if __name__ == "__main__":
