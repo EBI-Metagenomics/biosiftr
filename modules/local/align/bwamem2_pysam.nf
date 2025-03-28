@@ -6,7 +6,7 @@ process ALIGN_BWAMEM2 {
     input:
     tuple val(meta), path(reads)
     tuple val(meta2), path(index)
-    val(cov)
+    tuple val(meta), val(sp_richness)
 
     output:
     tuple val(meta), path("*.tsv"), emit: cov_file
@@ -17,6 +17,11 @@ process ALIGN_BWAMEM2 {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def cov = '0.1'
+    if (sp_richness > 100) {
+        cov = '0.01'
+    }
+    
     """
     INDEX=`find -L ./ -name "*.amb" | sed 's/\\.amb\$//'`
 
@@ -32,9 +37,10 @@ process ALIGN_BWAMEM2 {
     samtools index -@ ${task.cpus} ${prefix}_sorted.bam
 
     echo " ---> processing bam file"
+
     bam2cov_filt.py \\
         --bwa_bam ${prefix}_sorted.bam \\
-        --cov_thres $cov \\
+        --cov_thres ${cov} \\
         --prefix ${prefix}_u_relab
 
     echo " ---> removing bam file"
