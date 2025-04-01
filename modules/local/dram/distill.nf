@@ -39,10 +39,6 @@ process DRAM_DISTILL {
         "fasta",
         "scaffold",
         "gene_position",
-        "start_position",
-        "end_position",
-        "strandedness",
-        "rank",
         "kegg_id",
         "kegg_hit",
         "pfam_hits",
@@ -58,6 +54,7 @@ process DRAM_DISTILL {
     fi
 
     cat ${dram_summary} >> dram_input.tsv
+
     line_count=\$(wc -l dram_input.tsv | cut -d' ' -f1)
 
     echo "Line count is "\$line_count

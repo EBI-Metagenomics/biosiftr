@@ -298,22 +298,19 @@ def species_writer(reps_list, all_kos, all_pfams, species_kos, species_pfams, ou
 
 
 def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, output):
-    # The first column has the gene_id
+    species_annot = {}
     dram_header = [
         "",
         "fasta",
         "scaffold",
         "gene_position",
-        "start_position",
-        "end_position",
-        "strandedness",
-        "rank",
         "kegg_id",
         "kegg_hit",
         "pfam_hits",
         "cazy_hits",
         "bin_taxonomy",
     ]
+    counter = 0
 
     with open(output + "_species_dram.tsv", "w") as output_sp, open(
         output + "_community_dram.tsv", "w"
@@ -322,9 +319,18 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
 
         # Parsing the genes dictionary. We use the species_clstr id instead of fasta
         for species_clstr in per_gene_dict:
-            for gene_line in per_gene_dict[species_clstr]:
-                gene_info = {}
+            cazy_hits, pfam_hits, kegg_ids, kegg_hits = [], [], [], []
+            counter += 1
 
+            species_annot[species_clstr] = {}
+            species_annot[species_clstr]["fasta"] = (
+                    species_clstr + "_clstr: " + taxonomy[species_clstr]
+            )
+            species_annot[species_clstr]["scaffold"] = species_clstr + '_' + str(counter)
+            species_annot[species_clstr]["gene_position"] = species_clstr + '_clstr'
+            species_annot[species_clstr]["bin_taxonomy"] = taxonomy[species_clstr]
+
+            for gene_line in per_gene_dict[species_clstr]:
                 # Populating handy info
                 (
                     contig,
@@ -337,22 +343,11 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                     pfam,
                     core,
                 ) = gene_line.split("\t")
-                gene_info["fasta"] = (
-                    species_clstr + "_clstr: " + taxonomy[species_clstr]
-                )
-                gene_info["scaffold"] = contig
-                gene_info["start_position"] = start
-                gene_info["end_position"] = end
-                gene_info["strandedness"] = strand
-                gene_info["bin_taxonomy"] = taxonomy[species_clstr]
-                gene_info["gene_position"] = gene_positions[gene_id]
 
                 # Processing cazy, pfam, and kegg descriptions. If no description,
                 # then the annotation is discarded to avoid passing depricated annotation to DRAM
-                rank = "E"
-                if cazy == "-":
-                    cazy_hits = ""
-                else:
+                #rank = "E"
+                if cazy != '-':
                     cazy_desc_list = []
                     for cazy_acc in cazy.split(","):
                         if cazy_acc in dram_desc:
@@ -364,68 +359,61 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                                 cazy_desc_list.append(cazy_desc)
                             last_element = cazy_desc_list.pop(-1)
                             last_element = last_element + " [" + cazy_acc + "]"
-                            cazy_desc_list.append(last_element)
+                            if last_element not in cazy_hits:
+                                cazy_hits.append(last_element)
 
-                    if len(cazy_desc_list) > 0:
-                        cazy_hits = "; ".join(cazy_desc_list)
-                        rank = "D"
-                    else:
-                        cazy_hits = ""
-                gene_info["cazy_hits"] = cazy_hits
-
-                if pfam == "-":
-                    pfam_hits = ""
-                else:
-                    pfam_desc_list = []
+                if pfam != '-':
                     for pfam_id in pfam.split(","):
                         if pfam_id in pfam_desc:
                             pfam_full_desc = pfam_desc[pfam_id] + " [" + pfam_id + "]"
-                            pfam_desc_list.append(pfam_full_desc)
-                    if len(pfam_desc_list) > 0:
-                        pfam_hits = ";".join(pfam_desc_list)
-                        rank = "D"
-                    else:
-                        pfam_hits = ""
-                gene_info["pfam_hits"] = pfam_hits
+                            if pfam_full_desc not in pfam_hits:
+                                pfam_hits.append(pfam_full_desc)
 
-                if kegg == "-":
-                    kegg_id = ""
-                    kegg_hit = ""
-                else:
-                    kegg = kegg.replace(",", ";")
-                    kegg_id_list = []
-                    ko_desc_list = []
-                    for ko in kegg.split(";"):
+                if kegg != "-":
+                    for ko in kegg.split(","):
                         if ko in dram_desc:
-                            kegg_id_list.append(ko)
+                            if ko not in kegg_ids:
+                                kegg_ids.append(ko)
                             for ko_desc in dram_desc[ko]:
-                                ko_desc_list.append(ko_desc)
-                    if len(kegg_id_list) > 0:
-                        rank = "C"
-                        kegg_id = ";".join(kegg_id_list)
-                        kegg_hit = ";".join(ko_desc_list)
-                    else:
-                        kegg_id = ""
-                        kegg_hit = ""
-                gene_info["kegg_id"] = kegg_id
-                gene_info["kegg_hit"] = kegg_hit
-                gene_info["rank"] = rank
+                                if ko_desc not in kegg_hits:
+                                    kegg_hits.append(ko_desc)
 
-                # Writing to output files
-                to_print = []
-                to_print.append(gene_id)
-                for header_key in dram_header[1:]:
-                    to_print.append(gene_info[header_key])
-                output_sp.write("\t".join(to_print) + "\n")
+                # Aggregating annotation at genome level for species output
+                species_annot[species_clstr].setdefault("cazy_hits", []).extend(cazy_hits)
+                species_annot[species_clstr].setdefault("pfam_hits", []).extend(pfam_hits)
+                species_annot[species_clstr].setdefault("kegg_id", []).extend(kegg_ids)
+                species_annot[species_clstr].setdefault("kegg_hit", []).extend(kegg_hits)
 
-                gene_info["fasta"] = "community: " + output
-                gene_info["bin_taxonomy"] = "community: " + output
-                to_print = []
-                to_print.append(gene_id)
-                for header_key in dram_header[1:]:
-                    to_print.append(gene_info[header_key])
-                output_comm.write("\t".join(to_print) + "\n")
-                output_sp.write("\t".join(to_print) + "\n")
+
+        # Writing output at assembly level and aggreagting at sample level sample
+        sample_annot = {}
+        for genome in species_annot:
+            to_print = []
+            to_print.append(genome)
+            for header_key in dram_header[1:]:
+                value = species_annot[genome][header_key]
+                if isinstance(value, list):
+                    value = set(value)
+                    sample_annot.setdefault(header_key, []).extend(value)
+                    value = "; ".join(value)
+                to_print.append(value)
+            output_sp.write("\t".join(to_print) + "\n")
+
+        # Aggregating annotation at sample level for community output
+        sample_annot["fasta"] = "community: " + output
+        sample_annot["bin_taxonomy"] = "community_" + output
+        sample_annot["scaffold"] = "community_0"
+        sample_annot["gene_position"] = 'microbial_community'
+
+        to_print = []
+        to_print.append("assembly")
+        for header_key in dram_header[1:]:
+            value = sample_annot[header_key]
+            if isinstance(value, list):
+                value = "; ".join(set(value))
+            to_print.append(value)
+        output_comm.write("\t".join(to_print) + "\n")
+
 
 
 def main():
@@ -457,6 +445,11 @@ def main():
         required=True,
     )
     parser.add_argument(
+        "--dram_out",
+        action="store_true",
+        help="Generate dram files for DRAM_distill. Default = false",
+    )
+    parser.add_argument(
         "--output",
         type=str,
         help="Prefix to be used to name the output files. This string will also be used in headers",
@@ -465,11 +458,9 @@ def main():
     args = parser.parse_args()
 
     pfam_db = args.external_db + "/Pfam-A.hmm.dat.gz"
-    dram_form = args.external_db + "/genome_summary_form.tsv"
 
     ### Calling functions
     (pfam_desc) = pfam_parser(pfam_db)
-    (dram_desc) = dram_parser(dram_form)
     (reps_list, taxonomy) = relab_parser(args.relab)
 
     if args.core_mode == "pan":
@@ -503,9 +494,13 @@ def main():
     species_writer(
         reps_list, all_kos, all_pfams, species_kos, species_pfams, args.output
     )
-    dram_writer(
-        per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, args.output
-    )
+
+    if args.dram_out:
+        dram_form = args.external_db + "/genome_summary_form.tsv"
+        (dram_desc) = dram_parser(dram_form)
+        dram_writer(
+            per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, args.output
+        )
 
 
 if __name__ == "__main__":

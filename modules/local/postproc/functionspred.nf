@@ -13,20 +13,22 @@ process POSTPROC_FUNCTIONSPRED {
     val(core_mode)
     path(pangenome_db)
     path(dram_dbs)
+    val(run_dram)
 
     output:
     tuple val(meta), path("*_species_pfams.tsv")  , emit: pfam_spec
     tuple val(meta), path("*_community_pfams.tsv"), emit: pfam_comm
     tuple val(meta), path("*_species_kegg.tsv")   , emit: kegg_spec
     tuple val(meta), path("*_community_kegg.tsv") , emit: kegg_comm
-    tuple val(meta), path("*_species_dram.tsv")   , emit: dram_spec
-    tuple val(meta), path("*_community_dram.tsv") , emit: dram_comm
+    tuple val(meta), path("*_species_dram.tsv")   , emit: dram_spec, optional: true
+    tuple val(meta), path("*_community_dram.tsv") , emit: dram_comm, optional: true
     path "versions.yml"                           , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
+    def dram_arg = (run_dram) ? "--dram_out" : ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
     """
@@ -35,7 +37,8 @@ process POSTPROC_FUNCTIONSPRED {
         --external_db $dram_dbs \\
         --relab $tax_tsv \\
         --core_mode $core_mode \\
-        --output ${prefix}_${tool}
+        --output ${prefix}_${tool} \\
+        ${dram_arg}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
