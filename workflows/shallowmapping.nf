@@ -203,8 +203,8 @@ workflow SHALLOWMAPPING {
 
     /************************************************************************************/
     /* bwamem2 optimisation depends on the number of species detected by sourmash       */
-    /* If species number is >= 300, then coverage threshold = 0.01                      */
-    /* If species number is < 300, then coverage threshold = 0.1                        */
+    /* If species number is > 150, then coverage threshold = 0.01                       */
+    /* If species number is <= 150, then coverage threshold = 0.1                       */
     /************************************************************************************/
 
     if (params.run_bwa) {

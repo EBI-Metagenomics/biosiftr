@@ -18,7 +18,7 @@ process ALIGN_BWAMEM2 {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def cov = '0.1'
-    if (sp_richness > 300) {
+    if (sp_richness > 150) {
         cov = '0.01'
     }
     

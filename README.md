@@ -55,8 +55,8 @@ nextflow run ebi-metagenomics/shallowmapping \
    --biome <CATALOGUE_ID> \
    --input samplesheet.csv \
    --outdir <PROJECT_NAME> default = `results` \
-    --dbs </path/to/dbs> \
-    --decontamination_indexes </path to folder with bwamem2 indexes>
+   --dbs </path/to/dbs> \
+   --decontamination_indexes </path to folder with bwamem2 indexes>
 ```
 
 The central location for the databases can be set in the config file.
@@ -64,13 +64,15 @@ The central location for the databases can be set in the config file.
 Optional arguments include:
 
 ```bash
---run_bwa <true or false> default = `false`   # To generate results using bwamem2 besides sourmash
---core_mode <true or false> default = `false` # To use core functions instead of pangenome functions
+--run_bwa <boolean> default = `false`   # To generate results using bwamem2 besides sourmash
+--core_mode <boolean> default = `false` # To use core functions instead of pangenome functions
+--run_dram <boolean> default = `false`  # To generate DRAM results
 ```
 
 Use `--core_mode true` for large catalogues like the human-gut to avoid over-prediction due to an extremely large number of accessory genes in the pangenome.
 Nextflow option `-profile` can be used to select a suitable config for your computational resources. You can add profile files to the `config` directory.
 Nextflow option `-resume` can be used to re-run the pipeline from the last successfully finished step.
+
 
 #### Available biomes
 
