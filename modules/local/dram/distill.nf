@@ -39,10 +39,6 @@ process DRAM_DISTILL {
         "fasta",
         "scaffold",
         "gene_position",
-        "start_position",
-        "end_position",
-        "strandedness",
-        "rank",
         "kegg_id",
         "kegg_hit",
         "pfam_hits",
@@ -58,6 +54,7 @@ process DRAM_DISTILL {
     fi
 
     cat ${dram_summary} >> dram_input.tsv
+
     line_count=\$(wc -l dram_input.tsv | cut -d' ' -f1)
 
     echo "Line count is "\$line_count
@@ -68,7 +65,7 @@ process DRAM_DISTILL {
             -i dram_input.tsv  \\
             -o dram_out
 
-        counter=0
+        export counter=0
         # Loop through each product_*.html files #
         for productfile in dram_out/product*.html; do
             mv "\$productfile" "${prefix}_${tool}_${in_type}_\${counter}_dram.html"

@@ -27,26 +27,33 @@
                     "type": "string",
                     "description": "This can be any of the MGnify catalogues for which shallow-mapping databases are currently available",
                     "enum": [
-                        "chicken-gut-v1.0.1",
-                        "cow-rumen-v1.0.1",
-                        "human-gut-v2.0.2",
-                        "human-oral-v1.0.1",
-                        "human-vaginal-v1.0",
-                        "honeybee-gut-v1.0.1",
-                        "marine-v2.0",
-                        "mouse-gut-v1.0",
-                        "non-model-fish-gut-v2.0",
-                        "pig-gut-v1.0",
-                        "sheep-rumen-v1.0",
-                        "zebrafish-fecal-v1.0"
+                        "chicken-gut-v1-0-1",
+                        "cow-rumen-v1-0-1",
+                        "human-gut-v2-0-2",
+                        "human-oral-v1-0-1",
+                        "human-vaginal-v1-0",
+                        "honeybee-gut-v1-0-1",
+                        "marine-v2-0",
+                        "mouse-gut-v1-0",
+                        "non-model-fish-gut-v2-0",
+                        "pig-gut-v1-0",
+                        "sheep-rumen-v1-0",
+                        "zebrafish-fecal-v1-0"
                     ]
                 },
                 "run_bwa": {
                     "type": "boolean",
+		    "default": false,
                     "description": "Generate extra results of taxonomic and functional profiles using bwa-mem2"
+                },
+                "run_dram": {
+                    "type": "boolean",
+		    "default": false,
+                    "description": "Generate dram visuals"
                 },
                 "core_mode": {
                     "type": "boolean",
+		    "default": false,
                     "description": "The pipeline will use the core functional annotations instead of pangenome functional annotations."
                 },
                 "outdir": {
