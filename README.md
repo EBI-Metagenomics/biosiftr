@@ -14,7 +14,7 @@ The main sections of the pipeline include the following steps:
 6. Taxonomic profile generation
 7. Functional profile inference
 
-The final output includes a species relative abundance table, Pfam and KEGG Orthologs (KO) count tables, a KEGG modules completeness table, and DRAM-style visuals. In addition, the shallow-mapping pipeline will integrate the taxonomic and functional tables of all the samples in the input samplesheet.
+The final output includes a species relative abundance table, Pfam and KEGG Orthologs (KO) count tables, a KEGG modules completeness table, and DRAM-style visuals (optional). In addition, the shallow-mapping pipeline will integrate the taxonomic and functional tables of all the samples in the input samplesheet.
 
 <p align="center" width="100%">
    <img src="images/workflow_Apr2025.png" width="90%"/>
