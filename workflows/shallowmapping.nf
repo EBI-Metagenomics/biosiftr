@@ -157,22 +157,24 @@ workflow SHALLOWMAPPING {
     ch_versions = ch_versions.mix(POSTPROC_SOURMASHTAXO.out.versions.first())
 
     if (params.core_mode) {
-        SM_FUNC(POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', DOWNLOAD_REFERENCES.out.biome_pangenome_functional_anns_db, DOWNLOAD_REFERENCES.out.dram_dbs)
+        SM_FUNC(POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', DOWNLOAD_REFERENCES.out.biome_pangenome_functional_anns_db, DOWNLOAD_REFERENCES.out.dram_dbs, params.run_dram)
         ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
 
         SM_SPEC_KC(POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'core', DOWNLOAD_REFERENCES.out.biome_kegg_completeness_db)
         ch_versions = ch_versions.mix(SM_SPEC_KC.out.versions.first())
     }
     else {
-        SM_FUNC(POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', DOWNLOAD_REFERENCES.out.biome_pangenome_functional_anns_db, DOWNLOAD_REFERENCES.out.dram_dbs)
+        SM_FUNC(POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', DOWNLOAD_REFERENCES.out.biome_pangenome_functional_anns_db, DOWNLOAD_REFERENCES.out.dram_dbs, params.run_dram)
         ch_versions = ch_versions.mix(SM_FUNC.out.versions.first())
 
         SM_SPEC_KC(POSTPROC_SOURMASHTAXO.out.sm_taxo, 'sm', 'pan', DOWNLOAD_REFERENCES.out.biome_kegg_completeness_db)
         ch_versions = ch_versions.mix(SM_SPEC_KC.out.versions.first())
     }
 
-    SM_DRAM(SM_FUNC.out.dram_spec, 'sm', 'species')
-    ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
+    if (params.run_dram) {
+        SM_DRAM(SM_FUNC.out.dram_spec, 'sm', 'species')
+        ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
+    }
 
     SM_COMM_KC(SM_FUNC.out.kegg_comm, 'sm')
     ch_versions = ch_versions.mix(SM_COMM_KC.out.versions.first())
@@ -190,13 +192,21 @@ workflow SHALLOWMAPPING {
     INTEGRA_MODU(SM_COMM_KC.out.kegg_comp.collect { it[1] }, 'sm_modules')
     ch_versions = ch_versions.mix(INTEGRA_MODU.out.versions.first())
 
-    ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
-
-    DRAM_DISTILL(ch_dram_community, 'sm', 'community')
-
-    ch_versions = ch_versions.mix(DRAM_DISTILL.out.versions.first())
+    if (params.run_dram) {
+        ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
+        DRAM_DISTILL(ch_dram_community, 'sm', 'community')
+        ch_versions = ch_versions.mix(DRAM_DISTILL.out.versions.first())
+    }
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
+    // bwamem2 optimisation depends on the number of species detected by sourmash
+
+    /************************************************************************************/
+    /* bwamem2 optimisation depends on the number of species detected by sourmash       */
+    /* If species number is > 150, then coverage threshold = 0.01                       */
+    /* If species number is <= 150, then coverage threshold = 0.1                       */
+    /************************************************************************************/
+
     if (params.run_bwa) {
         genomes_ref = DOWNLOAD_REFERENCES.out.biome_bwa_db
             .collect()
@@ -204,30 +214,40 @@ workflow SHALLOWMAPPING {
                 [[id: host_name], db_files]
             }
 
-        ALIGN_BWAMEM2(hq_reads, genomes_ref)
+        // Mapping reads and filtering positive genomes according with mapping coverage threshold
+        POSTPROC_SOURMASHTAXO.out.sm_taxo
+            .map{ meta, taxo_file -> 
+                species_richness = taxo_file.countLines()
+                return tuple(meta, species_richness)
+            }.set {
+                species_richness_ch
+            }
+
+        ALIGN_BWAMEM2(hq_reads, genomes_ref, species_richness_ch)
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
         POSTPROC_BWATAXO(ALIGN_BWAMEM2.out.cov_file, DOWNLOAD_REFERENCES.out.biome_genomes_metadata)
-
         ch_versions = ch_versions.mix(POSTPROC_BWATAXO.out.versions.first())
 
         if (params.core_mode) {
-            BWA_FUNC(POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', DOWNLOAD_REFERENCES.out.biome_pangenome_functional_anns_db, DOWNLOAD_REFERENCES.out.dram_dbs)
+            BWA_FUNC(POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', DOWNLOAD_REFERENCES.out.biome_pangenome_functional_anns_db, DOWNLOAD_REFERENCES.out.dram_dbs, params.run_dram)
             ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
 
             BWA_SPEC_KC(POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'core', DOWNLOAD_REFERENCES.out.biome_kegg_completeness_db)
             ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
         }
         else {
-            BWA_FUNC(POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', DOWNLOAD_REFERENCES.out.biome_pangenome_functional_anns_db, DOWNLOAD_REFERENCES.out.dram_dbs)
+            BWA_FUNC(POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', DOWNLOAD_REFERENCES.out.biome_pangenome_functional_anns_db, DOWNLOAD_REFERENCES.out.dram_dbs, params.run_dram)
             ch_versions = ch_versions.mix(BWA_FUNC.out.versions.first())
 
             BWA_SPEC_KC(POSTPROC_BWATAXO.out.bwa_taxo, 'bwa', 'pan', DOWNLOAD_REFERENCES.out.biome_kegg_completeness_db)
             ch_versions = ch_versions.mix(BWA_SPEC_KC.out.versions.first())
         }
 
-        BWA_DRAM(BWA_FUNC.out.dram_spec, 'bwa', 'species')
-        ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
+        if (params.run_dram) {
+            BWA_DRAM(BWA_FUNC.out.dram_spec, 'bwa', 'species')
+            ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
+        }
 
         BWA_COMM_KC(BWA_FUNC.out.kegg_comm, 'bwa')
         ch_versions = ch_versions.mix(BWA_COMM_KC.out.versions.first())
@@ -245,9 +265,11 @@ workflow SHALLOWMAPPING {
         BWA_INT_MODU(BWA_COMM_KC.out.kegg_comp.collect { it[1] }, 'bwa_modules')
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
 
-        ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
-        BWA_INT_DRAM(ch_bwa_dram_community, 'bwa', 'community')
-        ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
+        if (params.run_dram) {
+            ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
+            BWA_INT_DRAM(ch_bwa_dram_community, 'bwa', 'community')
+            ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
+        }
     }
 
 

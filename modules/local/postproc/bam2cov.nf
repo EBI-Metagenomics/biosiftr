@@ -7,7 +7,7 @@ process POSTPROC_BAM2COV {
         'quay.io/biocontainers/pysam:0.22.0--py38h15b938a_0' }"
 
     input:
-    tuple val(meta), path(bam), path(bai)
+    tuple val(meta), path(bam), path(bai), val(cov)
 
     output:
     tuple val(meta), path("*.tsv"), emit: cov_file
@@ -19,11 +19,12 @@ process POSTPROC_BAM2COV {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
+    def VERSION = '1.1' // WARN: Python script with no version control. This would be v1.1 of this script.
     """
     bam2cov_filt.py \\
         --bwa_bam $bam \\
-        --prefix ${prefix}_u_relab_01 \\
+        --cov_thres $cov \\
+        --prefix ${prefix}_u_relab \\
         $args
 
     cat <<-END_VERSIONS > versions.yml
@@ -37,7 +38,7 @@ process POSTPROC_BAM2COV {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.0'
     """
-    touch ${prefix}_u_relab_01.tsv
+    touch ${prefix}_u_relab.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
