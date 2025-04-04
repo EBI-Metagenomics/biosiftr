@@ -346,7 +346,6 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
 
                 # Processing cazy, pfam, and kegg descriptions. If no description,
                 # then the annotation is discarded to avoid passing depricated annotation to DRAM
-                #rank = "E"
                 if cazy != '-':
                     cazy_desc_list = []
                     for cazy_acc in cazy.split(","):
@@ -385,7 +384,7 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                 species_annot[species_clstr].setdefault("kegg_hit", []).extend(kegg_hits)
 
 
-        # Writing output at assembly level and aggreagting at sample level sample
+        # Writing output at assembly level and aggregating at sample level sample
         sample_annot = {}
         for genome in species_annot:
             to_print = []
