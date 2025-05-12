@@ -29,9 +29,9 @@ The pipeline requires [Nextflow](https://www.nextflow.io/docs/latest/getstarted.
 
 ### Required Reference Databases
 
-The first time you run the pipeline, it will download the required MGnify genomes catalogue reference files and the human_phiX BWAMEM2 index. If you select a different host for decontamination, you must provide the index yourself.
+The first time you run the pipeline, it will download the required MGnify genomes catalogue reference files and the human_phiX bwa-mem2 index. Other common hosts like mouse will be also automatically downloaded.
 
-Running the pipeline using bwamem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. This database will occupy considerable storage in your system depending on the biome.
+Running the pipeline using bwa-mem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. This database will occupy considerable storage in your system, depending on the biome.
 
 In addition, instructions to generate the databases from custom catalogues can be found in the [BioSIFTR paper's repository](https://github.com/EBI-Metagenomics/biosiftr_extended_methods?tab=readme-ov-file#31-processing-custom-genome-catalogues).
 
@@ -49,7 +49,7 @@ single_sample,/PATH/test.fq.gz
 
 Each row represents a fastq file (single-end) or a pair of fastq files (paired end) where 'sample' is a unique identifier for each dataset, 'fastq_1' is the path to the first FASTQ file, and 'fastq_2' is the path to the second FASTQ file for paired-end data.
 
-Now, you can run the pipeline using the minimum of arguments:
+Now, you can run the pipeline using the minimum arguments:
 
 ```bash
 nextflow run ebi-metagenomics/biosiftr \
