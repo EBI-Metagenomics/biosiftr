@@ -1,4 +1,5 @@
 # BioSIFTR
+
 # Biome-specific Shallow-shotgun Inference of Functional Traits through Read-mapping
 
 **ebi-metagenomics/biosiftr** is a bioinformatics pipeline that generates taxonomic and functional profiles for low-yield (shallow shotgun: < 10 M reads) short raw-reads using [`MGnify biome-specific genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) as a reference.
@@ -73,7 +74,6 @@ Optional arguments include:
 Use `--core_mode true` for large catalogues like the human-gut to avoid over-prediction due to a large number of accessory genes in the pangenome.
 Nextflow option `-profile` can be used to select a suitable config for your computational resources. You can add profile files to the `config` directory.
 Nextflow option `-resume` can be used to re-run the pipeline from the last successfully finished step.
-
 
 #### Available biomes
 
