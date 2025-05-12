@@ -24,7 +24,7 @@ include { validateParameters; paramsHelp } from 'plugin/nf-validation'
 include { BIOSIFTR } from './workflows/biosiftr'
 
 //
-// WORKFLOW: Run main ebi-metagenomics/shallowmapping analysis pipeline
+// WORKFLOW: Run main ebi-metagenomics/biosiftr analysis pipeline
 //
 workflow EBIMETAGENOMICS_BIOSIFTR {
     // Print help message if needed

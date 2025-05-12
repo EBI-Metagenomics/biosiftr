@@ -5,7 +5,7 @@
 import nextflow.Nextflow
 import groovy.text.SimpleTemplateEngine
 
-class WorkflowShallowmapping {
+class WorkflowBiosiftr {
 
     //
     // Check and validate parameters
