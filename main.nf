@@ -1,8 +1,8 @@
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    ebi-metagenomics/shallowmapping
+    ebi-metagenomics/biosiftr
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/ebi-metagenomics/shallowmapping
+    Github : https://github.com/ebi-metagenomics/biosiftr
 ----------------------------------------------------------------------------------------
 */
 
@@ -21,12 +21,12 @@ include { validateParameters; paramsHelp } from 'plugin/nf-validation'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { SHALLOWMAPPING } from './workflows/shallowmapping'
+include { BIOSIFTR } from './workflows/biosiftr'
 
 //
 // WORKFLOW: Run main ebi-metagenomics/shallowmapping analysis pipeline
 //
-workflow EBIMETAGENOMICS_SHALLOWMAPPING {
+workflow EBIMETAGENOMICS_BIOSIFTR {
     // Print help message if needed
     if (params.help) {
         def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
@@ -43,7 +43,7 @@ workflow EBIMETAGENOMICS_SHALLOWMAPPING {
 
     WorkflowMain.initialise(workflow, params, log)
 
-    SHALLOWMAPPING ()
+    BIOSIFTR ()
 }
 
 /*
@@ -57,7 +57,7 @@ workflow EBIMETAGENOMICS_SHALLOWMAPPING {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
-    EBIMETAGENOMICS_SHALLOWMAPPING ()
+    EBIMETAGENOMICS_BIOSIFTR ()
 }
 
 /*
