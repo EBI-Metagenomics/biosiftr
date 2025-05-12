@@ -1,6 +1,6 @@
 # Introduction
 
-**ebi-metagenomics/shallowmapping** is a bioinformatics pipeline that generates taxonomic and functional profiles for low-yield (shallow shotgun: < 10 M reads) short raw-reads using [`MGnify biome-specific genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) as a reference.
+**ebi-metagenomics/biosiftr** is a bioinformatics pipeline that generates taxonomic and functional profiles for low-yield (shallow shotgun: < 10 M reads) short raw-reads using [`MGnify biome-specific genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) as a reference.
 
 The biome selection includes all the biomes available in the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes).
 
@@ -22,17 +22,17 @@ The final output includes a species relative abundance table, Pfam and KEGG Orth
 
 ## Installation
 
-This workflow was built using [Nextflow](https://www.nextflow.io/) and follows [nf-core](https://nf-co.re/) good practices. It is containerized, so users can use either Docker or Apptainer/Singularity to run the pipeline. At the moment, it doesn't support Conda environments.
+This workflow was built using [Nextflow](https://www.nextflow.io/) and follows [nf-core](https://nf-co.re/) good practices. It is containerised, so users can use either Docker or Apptainer/Singularity to run the pipeline. At the moment, it doesn't support Conda environments.
 
 The pipeline requires [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html#installation) and a container technology such as [Apptainer/Singularity](https://github.com/apptainer/singularity/blob/master/INSTALL.md) or [Docker](https://www.docker.com/).
 
 ### Required Reference Databases
 
-The first time you run the pipeline, it will download the required MGnify genomes catalog reference files and the human_phiX BWAMEM2 index. If you select a different host for decontamination, you must provide the index yourself.
+The first time you run the pipeline, it will download the required MGnify genomes catalogue reference files and the human_phiX BWAMEM2 index. If you select a different host for decontamination, you must provide the index yourself.
 
 Running the pipeline using bwamem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. This database will occupy considerable storage in your system depending on the biome.
 
-In addition, instructions to generate the databases from custom catalogues can be found in the [shallowmapping paper's repository](https://github.com/EBI-Metagenomics/shallow_shotgun_paper/tree/main?tab=readme-ov-file#31-processing-custom-genome-catalogues).
+In addition, instructions to generate the databases from custom catalogues can be found in the [BioSIFTR paper's repository](https://github.com/EBI-Metagenomics/biosiftr_extended_methods?tab=readme-ov-file#31-processing-custom-genome-catalogues).
 
 ### Usage
 
@@ -48,10 +48,10 @@ single_sample,/PATH/test.fq.gz
 
 Each row represents a fastq file (single-end) or a pair of fastq files (paired end) where 'sample' is a unique identifier for each dataset, 'fastq_1' is the path to the first FASTQ file, and 'fastq_2' is the path to the second FASTQ file for paired-end data.
 
-Now, you can run the pipeline using the minumum of arguments:
+Now, you can run the pipeline using the minimum of arguments:
 
 ```bash
-nextflow run ebi-metagenomics/shallowmapping \
+nextflow run ebi-metagenomics/biosiftr \
    --biome <CATALOGUE_ID> \
    --input samplesheet.csv \
    --outdir <PROJECT_NAME> default = `results` \
@@ -69,7 +69,7 @@ Optional arguments include:
 --run_dram <boolean> default = `false`  # To generate DRAM results
 ```
 
-Use `--core_mode true` for large catalogues like the human-gut to avoid over-prediction due to an extremely large number of accessory genes in the pangenome.
+Use `--core_mode true` for large catalogues like the human-gut to avoid over-prediction due to a large number of accessory genes in the pangenome.
 Nextflow option `-profile` can be used to select a suitable config for your computational resources. You can add profile files to the `config` directory.
 Nextflow option `-resume` can be used to re-run the pipeline from the last successfully finished step.
 
@@ -99,10 +99,10 @@ This can be any of the MGnify catalogues for which shallow-mapping databases are
 
 ## Test
 
-To test the installed tool with your douwnloaded databases you can run the pipeline using the small test dataset. Even if there are no hits with the biome you are interested, the pipeline should finish successfully. Add `-profile` if you have set up a config profile for your compute resources.
+To test the installed tool with your downloaded databases, you can run the pipeline using the small test dataset. Even if there are no hits with the biome you are interested in, the pipeline should finish successfully. Add `-profile` if you have set up a config profile for your compute resources.
 
 ```bash
-cd shallowmapping/tests
+cd biosiftr/tests
 nextflow run ../main.nf \
     --input test_samplesheet.csv \
     --biome <CATALOGUE_ID> \
@@ -112,7 +112,7 @@ nextflow run ../main.nf \
 
 ## Credits
 
-ebi-metagenomics/shallowmapping pipeline was originally written by @Ales-ibt.
+ebi-metagenomics/biosiftr pipeline was originally written by @Ales-ibt.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 @mberacochea
