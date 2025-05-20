@@ -174,6 +174,10 @@ workflow BIOSIFTR {
     if (params.run_dram) {
         SM_DRAM(SM_FUNC.out.dram_spec, 'sm', 'species')
         ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
+
+        ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
+        DRAM_DISTILL(ch_dram_community, 'sm', 'community')
+        ch_versions = ch_versions.mix(DRAM_DISTILL.out.versions.first())
     }
 
     SM_COMM_KC(SM_FUNC.out.kegg_comm, 'sm')
@@ -192,11 +196,6 @@ workflow BIOSIFTR {
     INTEGRA_MODU(SM_COMM_KC.out.kegg_comp.collect { it[1] }, 'sm_modules')
     ch_versions = ch_versions.mix(INTEGRA_MODU.out.versions.first())
 
-    if (params.run_dram) {
-        ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
-        DRAM_DISTILL(ch_dram_community, 'sm', 'community')
-        ch_versions = ch_versions.mix(DRAM_DISTILL.out.versions.first())
-    }
 
     // ---- MAPPING READS with bwamem2 (optional): mapping, cleaning output, and profiling ---- //
     // bwamem2 optimisation depends on the number of species detected by sourmash
@@ -223,7 +222,7 @@ workflow BIOSIFTR {
                 species_richness_ch
             }
 
-        ALIGN_BWAMEM2(hq_reads, genomes_ref, species_richness_ch)
+        ALIGN_BWAMEM2(hq_reads.join(species_richness_ch, by: 0), genomes_ref)
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
         POSTPROC_BWATAXO(ALIGN_BWAMEM2.out.cov_file, DOWNLOAD_REFERENCES.out.biome_genomes_metadata)
@@ -247,6 +246,10 @@ workflow BIOSIFTR {
         if (params.run_dram) {
             BWA_DRAM(BWA_FUNC.out.dram_spec, 'bwa', 'species')
             ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
+
+            ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
+            BWA_INT_DRAM(ch_bwa_dram_community, 'bwa', 'community')
+            ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
         }
 
         BWA_COMM_KC(BWA_FUNC.out.kegg_comm, 'bwa')
@@ -265,11 +268,6 @@ workflow BIOSIFTR {
         BWA_INT_MODU(BWA_COMM_KC.out.kegg_comp.collect { it[1] }, 'bwa_modules')
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
 
-        if (params.run_dram) {
-            ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
-            BWA_INT_DRAM(ch_bwa_dram_community, 'bwa', 'community')
-            ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
-        }
     }
 
 

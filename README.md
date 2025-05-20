@@ -32,7 +32,19 @@ The pipeline requires [Nextflow](https://www.nextflow.io/docs/latest/getstarted.
 
 The first time you run the pipeline, it will download the required MGnify genomes catalogue reference files and the human_phiX bwa-mem2 index. Other common hosts like mouse will be also automatically downloaded.
 
-Running the pipeline using bwa-mem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. This database will occupy considerable storage in your system, depending on the biome.
+Running the pipeline using bwa-mem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. This database will occupy considerable storage in your system, depending on the biome (approx database sizes):
+106 G	marine-v2-0
+38 G	human-gut-v2-0-2
+29 G	mouse-gut-v1-0
+21 G	cow-rumen-v1-0-1
+16 G	sheep-rumen-v1-0
+15 G	pig-gut-v1-0
+10 G	chicken-gut-v1-0-1
+4.5 G	human-oral-v1-0-1
+2.0 G	human-vaginal-v1-0
+2.2 G	non-model-fish-gut-v2-0
+2.5 G	honeybee-gut-v1-0-1
+1.5 G	zebrafish-fecal-v1-0
 
 In addition, instructions to generate the databases from custom catalogues can be found in the [BioSIFTR paper's repository](https://github.com/EBI-Metagenomics/biosiftr_extended_methods?tab=readme-ov-file#31-processing-custom-genome-catalogues).
 
@@ -58,7 +70,7 @@ nextflow run ebi-metagenomics/biosiftr \
    --input samplesheet.csv \
    --outdir <PROJECT_NAME> default = `results` \
    --dbs </path/to/dbs> \
-   --decontamination_indexes </path to folder with bwamem2 indexes>
+   --decontamination_indexes </path to folder with bwa-mem2 indexes>
 ```
 
 The central location for the databases can be set in the config file.
@@ -66,7 +78,7 @@ The central location for the databases can be set in the config file.
 Optional arguments include:
 
 ```bash
---run_bwa <boolean> default = `false`   # To generate results using bwamem2 besides sourmash
+--run_bwa <boolean> default = `false`   # To generate results using bwa-mem2 besides sourmash
 --core_mode <boolean> default = `false` # To use core functions instead of pangenome functions
 --run_dram <boolean> default = `false`  # To generate DRAM results
 ```
@@ -108,7 +120,7 @@ nextflow run ../main.nf \
     --input test_samplesheet.csv \
     --biome <CATALOGUE_ID> \
     --dbs </path/to/dbs> \
-    --decontamination_indexes </path to folder with bwamem2 indexes>
+    --decontamination_indexes </path to folder with bwa-mem2 indexes>
 ```
 
 ## Credits

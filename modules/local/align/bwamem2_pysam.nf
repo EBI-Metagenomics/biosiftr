@@ -4,9 +4,8 @@ process ALIGN_BWAMEM2 {
     container 'quay.io/microbiome-informatics/bwa_eukcc:2.2.1_2.0'
 
     input:
-    tuple val(meta), path(reads)
+    tuple val(meta), path(reads), val(sp_richness)
     tuple val(meta2), path(index)
-    tuple val(meta), val(sp_richness)
 
     output:
     tuple val(meta), path("*.tsv"), emit: cov_file

@@ -358,24 +358,20 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                                 cazy_desc_list.append(cazy_desc)
                             last_element = cazy_desc_list.pop(-1)
                             last_element = last_element + " [" + cazy_acc + "]"
-                            if last_element not in cazy_hits:
-                                cazy_hits.append(last_element)
+                            cazy_hits.add(last_element)
 
                 if pfam != '-':
                     for pfam_id in pfam.split(","):
                         if pfam_id in pfam_desc:
                             pfam_full_desc = pfam_desc[pfam_id] + " [" + pfam_id + "]"
-                            if pfam_full_desc not in pfam_hits:
-                                pfam_hits.append(pfam_full_desc)
+                            pfam_hits.add(pfam_full_desc)
 
                 if kegg != "-":
                     for ko in kegg.split(","):
                         if ko in dram_desc:
-                            if ko not in kegg_ids:
-                                kegg_ids.append(ko)
+                            kegg_ids.add(ko)
                             for ko_desc in dram_desc[ko]:
-                                if ko_desc not in kegg_hits:
-                                    kegg_hits.append(ko_desc)
+                                kegg_hits.add(ko_desc)
 
                 # Aggregating annotation at genome level for species output
                 species_annot[species_clstr].setdefault("cazy_hits", []).extend(cazy_hits)
