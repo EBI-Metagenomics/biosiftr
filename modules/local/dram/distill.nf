@@ -20,13 +20,12 @@ process DRAM_DISTILL {
 
     input:
     tuple val(meta), path(dram_summary)
-    val tool
-    //sm for sourmash or bwa for bwamem2
-    val in_type
+    val tool      // sm for sourmash or bwa for bwa-mem2
+    val in_type   // species or community
 
     output:
     tuple val(meta), path("*_dram*"), emit: destill_out, optional: true
-    path "versions.yml", emit: versions
+    path "versions.yml",              emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -36,11 +35,11 @@ process DRAM_DISTILL {
     // WARN: dram has no option to print the tool version. This is the container version
     def VERSION = '1.3.5'
     def header_columns = [
+	"",
         "fasta",
         "scaffold",
         "gene_position",
         "kegg_id",
-        "kegg_hit",
         "pfam_hits",
         "cazy_hits",
         "bin_taxonomy",

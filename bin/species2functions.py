@@ -305,21 +305,20 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
         "scaffold",
         "gene_position",
         "kegg_id",
-        "kegg_hit",
         "pfam_hits",
         "cazy_hits",
         "bin_taxonomy",
     ]
     counter = 0
 
-    with open(output + "_species_dram.tsv", "w") as output_sp, open(
-        output + "_community_dram.tsv", "w"
+    with open(output + "_species_dram_summary.tsv", "w") as output_sp, open(
+        output + "_community_dram_summary.tsv", "w"
     ) as output_comm:
         output_sp.write("\t".join(dram_header) + "\n")
 
         # Parsing the genes dictionary. We use the species_clstr id instead of fasta
         for species_clstr in per_gene_dict:
-            cazy_hits, pfam_hits, kegg_ids, kegg_hits = [], [], [], []
+            cazy_hits, pfam_hits, kegg_ids = set(), set(), set()
             counter += 1
 
             species_annot[species_clstr] = {}
@@ -370,17 +369,14 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                     for ko in kegg.split(","):
                         if ko in dram_desc:
                             kegg_ids.add(ko)
-                            for ko_desc in dram_desc[ko]:
-                                kegg_hits.add(ko_desc)
 
                 # Aggregating annotation at genome level for species output
                 species_annot[species_clstr].setdefault("cazy_hits", []).extend(cazy_hits)
                 species_annot[species_clstr].setdefault("pfam_hits", []).extend(pfam_hits)
                 species_annot[species_clstr].setdefault("kegg_id", []).extend(kegg_ids)
-                species_annot[species_clstr].setdefault("kegg_hit", []).extend(kegg_hits)
 
 
-        # Writing output at assembly level and aggregating at sample level sample
+        # Writing output at assembly level and aggregating at sample level
         sample_annot = {}
         for genome in species_annot:
             to_print = []
@@ -442,7 +438,7 @@ def main():
     parser.add_argument(
         "--dram_out",
         action="store_true",
-        help="Generate dram files for DRAM_distill. Default = false",
+        help="Generate dram summaries for DRAM_distill. Default = false",
     )
     parser.add_argument(
         "--output",
@@ -482,7 +478,7 @@ def main():
         exit(
             "The option "
             + args.core_mode
-            + " is not allowed. Chose eaither `pan` or `core`"
+            + " is not allowed. Chose either `pan` or `core`"
         )
 
     community_writer(functions_dict, all_kos, all_pfams, args.output)
