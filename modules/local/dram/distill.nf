@@ -36,14 +36,19 @@ process DRAM_DISTILL {
     // WARN: dram has no option to print the tool version. This is the container version
     def VERSION = '1.3.5'
     def header_columns = [
-	"",
+        "",
         "fasta",
         "scaffold",
         "gene_position",
+        "start_position",
+        "end_position",
+        "strandedness",
+        "rank",
         "kegg_id",
+        "kegg_hit",
         "pfam_hits",
         "cazy_hits",
-        "bin_taxonomy",
+        "bin_taxonomy"
     ]
     header_columns = header_columns.join("\t")
     """

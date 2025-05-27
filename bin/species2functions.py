@@ -307,8 +307,8 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
         "bin_taxonomy",
     ]
 
-    with open(output + "_species_dram.tsv", "w") as output_sp, open(
-        output + "_community_dram.tsv", "w"
+    with open(output + "_species_dram_summary.tsv", "w") as output_sp, open(
+        output + "_community_dram_summary.tsv", "w"
     ) as output_comm:
         output_sp.write("\t".join(dram_header) + "\n")
 
