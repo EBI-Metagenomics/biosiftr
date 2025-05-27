@@ -1,22 +1,14 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-# Copyright 2025 EMBL - European Bioinformatics Institute
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 
 import argparse
+import os.path
+import sys
 import gzip
+from Bio import SeqIO
+
+##### This script use the species prediction to generate functional tables from the pangenomic profiles
+##### Alejandra Escobar, EMBL-EBI
+##### Jan 11, 2024
 
 
 def pfam_parser(pfam_data):
@@ -43,14 +35,14 @@ def pfam_parser(pfam_data):
 
 def dram_parser(dram_form):
     dram_desc = {}
-    with open(dram_form) as input_file:
+    with open(dram_form, "r") as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
             gene_id = l_line[0]
             gene_description = l_line[1].replace('"', "")
             if gene_id in dram_desc:
-                if gene_description not in dram_desc[gene_id]:
+                if not gene_description in dram_desc[gene_id]:
                     dram_desc[gene_id].append(gene_description)
             else:
                 dram_desc[gene_id] = [gene_description]
@@ -60,7 +52,7 @@ def dram_parser(dram_form):
 def relab_parser(relab_table):
     taxonomy = {}
     reps_list = []
-    with open(relab_table) as input_file:
+    with open(relab_table, "r") as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
@@ -90,7 +82,7 @@ def functions_finder_pan(reps_list, db_path):
         per_gene_dict[rep_genome] = []
         pan_kos = []
         pan_pfams = []
-        with open(db_file) as input_file:
+        with open(db_file, "r") as input_file:
             next(input_file)
             next(input_file)
             for line in input_file:
@@ -121,7 +113,7 @@ def functions_finder_pan(reps_list, db_path):
                         kegg_list = [kegg]
                     pan_kos = pan_kos + kegg_list
                     for current_ko in kegg_list:
-                        if current_ko not in species_kos[rep_genome]:
+                        if not current_ko in species_kos[rep_genome]:
                             species_kos[rep_genome].append(current_ko)
 
                 if pfam != "-":
@@ -131,7 +123,7 @@ def functions_finder_pan(reps_list, db_path):
                         pfam_list = [pfam]
                     pan_pfams = pan_pfams + pfam_list
                     for current_pfam in pfam_list:
-                        if current_pfam not in species_pfams[rep_genome]:
+                        if not current_pfam in species_pfams[rep_genome]:
                             species_pfams[rep_genome].append(current_pfam)
 
         pan_kos = list(set(pan_kos))
@@ -180,7 +172,7 @@ def functions_finder_core(reps_list, db_path):
         per_gene_dict[rep_genome] = []
         pan_kos = []
         pan_pfams = []
-        with open(db_file) as input_file:
+        with open(db_file, "r") as input_file:
             next(input_file)
             next(input_file)
             for line in input_file:
@@ -212,7 +204,7 @@ def functions_finder_core(reps_list, db_path):
                             kegg_list = [kegg]
                         pan_kos = pan_kos + kegg_list
                         for current_ko in kegg_list:
-                            if current_ko not in species_kos[rep_genome]:
+                            if not current_ko in species_kos[rep_genome]:
                                 species_kos[rep_genome].append(current_ko)
 
                     if pfam != "-":
@@ -222,7 +214,7 @@ def functions_finder_core(reps_list, db_path):
                             pfam_list = [pfam]
                         pan_pfams = pan_pfams + pfam_list
                         for current_pfam in pfam_list:
-                            if current_pfam not in species_pfams[rep_genome]:
+                            if not current_pfam in species_pfams[rep_genome]:
                                 species_pfams[rep_genome].append(current_pfam)
 
         pan_kos = list(set(pan_kos))
@@ -298,38 +290,33 @@ def species_writer(reps_list, all_kos, all_pfams, species_kos, species_pfams, ou
 
 
 def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, output):
-    species_annot = {}
+    # The first column has the gene_id
     dram_header = [
         "",
         "fasta",
         "scaffold",
         "gene_position",
+        "start_position",
+        "end_position",
+        "strandedness",
+        "rank",
         "kegg_id",
+        "kegg_hit",
         "pfam_hits",
         "cazy_hits",
         "bin_taxonomy",
     ]
-    counter = 0
 
-    with open(output + "_species_dram_summary.tsv", "w") as output_sp, open(
-        output + "_community_dram_summary.tsv", "w"
+    with open(output + "_species_dram.tsv", "w") as output_sp, open(
+        output + "_community_dram.tsv", "w"
     ) as output_comm:
         output_sp.write("\t".join(dram_header) + "\n")
 
         # Parsing the genes dictionary. We use the species_clstr id instead of fasta
         for species_clstr in per_gene_dict:
-            cazy_hits, pfam_hits, kegg_ids = set(), set(), set()
-            counter += 1
-
-            species_annot[species_clstr] = {}
-            species_annot[species_clstr]["fasta"] = (
-                    species_clstr + "_clstr: " + taxonomy[species_clstr]
-            )
-            species_annot[species_clstr]["scaffold"] = species_clstr + '_' + str(counter)
-            species_annot[species_clstr]["gene_position"] = species_clstr + '_clstr'
-            species_annot[species_clstr]["bin_taxonomy"] = taxonomy[species_clstr]
-
             for gene_line in per_gene_dict[species_clstr]:
+                gene_info = {}
+
                 # Populating handy info
                 (
                     contig,
@@ -342,10 +329,22 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                     pfam,
                     core,
                 ) = gene_line.split("\t")
+                gene_info["fasta"] = (
+                    species_clstr + "_clstr: " + taxonomy[species_clstr]
+                )
+                gene_info["scaffold"] = contig
+                gene_info["start_position"] = start
+                gene_info["end_position"] = end
+                gene_info["strandedness"] = strand
+                gene_info["bin_taxonomy"] = taxonomy[species_clstr]
+                gene_info["gene_position"] = gene_positions[gene_id]
 
                 # Processing cazy, pfam, and kegg descriptions. If no description,
                 # then the annotation is discarded to avoid passing depricated annotation to DRAM
-                if cazy != '-':
+                rank = "E"
+                if cazy == "-":
+                    cazy_hits = ""
+                else:
                     cazy_desc_list = []
                     for cazy_acc in cazy.split(","):
                         if cazy_acc in dram_desc:
@@ -357,54 +356,67 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                                 cazy_desc_list.append(cazy_desc)
                             last_element = cazy_desc_list.pop(-1)
                             last_element = last_element + " [" + cazy_acc + "]"
-                            cazy_hits.add(last_element)
+                            cazy_desc_list.append(last_element)
 
-                if pfam != '-':
+                    if len(cazy_desc_list) > 0:
+                        cazy_hits = "; ".join(cazy_desc_list)
+                        rank = "D"
+                    else:
+                        cazy_hits = ""
+                gene_info["cazy_hits"] = cazy_hits
+
+                if pfam == "-":
+                    pfam_hits = ""
+                else:
+                    pfam_desc_list = set()
                     for pfam_id in pfam.split(","):
                         if pfam_id in pfam_desc:
                             pfam_full_desc = pfam_desc[pfam_id] + " [" + pfam_id + "]"
-                            pfam_hits.add(pfam_full_desc)
+                            pfam_desc_list.add(pfam_full_desc)
+                    if len(pfam_desc_list) > 0:
+                        pfam_hits = ";".join(pfam_desc_list)
+                        rank = "D"
+                    else:
+                        pfam_hits = ""
+                gene_info["pfam_hits"] = pfam_hits
 
-                if kegg != "-":
-                    for ko in kegg.split(","):
+                if kegg == "-":
+                    kegg_id = ""
+                    kegg_hit = ""
+                else:
+                    kegg = kegg.replace(",", ";")
+                    kegg_id_list, ko_desc_list = set(), set()
+                    for ko in kegg.split(";"):
                         if ko in dram_desc:
-                            kegg_ids.add(ko)
+                            kegg_id_list.add(ko)
+                            for ko_desc in dram_desc[ko]:
+                                ko_desc_list.add(ko_desc)
+                    if len(kegg_id_list) > 0:
+                        rank = "C"
+                        kegg_id = ";".join(kegg_id_list)
+                        kegg_hit = ";".join(ko_desc_list)
+                    else:
+                        kegg_id = ""
+                        kegg_hit = ""
+                gene_info["kegg_id"] = kegg_id
+                gene_info["kegg_hit"] = kegg_hit
+                gene_info["rank"] = rank
 
-                # Aggregating annotation at genome level for species output
-                species_annot[species_clstr].setdefault("cazy_hits", []).extend(cazy_hits)
-                species_annot[species_clstr].setdefault("pfam_hits", []).extend(pfam_hits)
-                species_annot[species_clstr].setdefault("kegg_id", []).extend(kegg_ids)
+                # Writing to output files
+                to_print = []
+                to_print.append(gene_id)
+                for header_key in dram_header[1:]:
+                    to_print.append(gene_info[header_key])
+                output_sp.write("\t".join(to_print) + "\n")
 
-
-        # Writing output at assembly level and aggregating at sample level
-        sample_annot = {}
-        for genome in species_annot:
-            to_print = []
-            to_print.append(genome)
-            for header_key in dram_header[1:]:
-                value = species_annot[genome][header_key]
-                if isinstance(value, list):
-                    value = set(value)
-                    sample_annot.setdefault(header_key, []).extend(value)
-                    value = "; ".join(value)
-                to_print.append(value)
-            output_sp.write("\t".join(to_print) + "\n")
-
-        # Aggregating annotation at sample level for community output
-        sample_annot["fasta"] = "community: " + output
-        sample_annot["bin_taxonomy"] = "community_" + output
-        sample_annot["scaffold"] = "community_0"
-        sample_annot["gene_position"] = 'microbial_community'
-
-        to_print = []
-        to_print.append("assembly")
-        for header_key in dram_header[1:]:
-            value = sample_annot[header_key]
-            if isinstance(value, list):
-                value = "; ".join(set(value))
-            to_print.append(value)
-        output_comm.write("\t".join(to_print) + "\n")
-
+                gene_info["fasta"] = "community: " + output
+                gene_info["bin_taxonomy"] = "community: " + output
+                to_print = []
+                to_print.append(gene_id)
+                for header_key in dram_header[1:]:
+                    to_print.append(gene_info[header_key])
+                output_comm.write("\t".join(to_print) + "\n")
+                output_sp.write("\t".join(to_print) + "\n")
 
 
 def main():
@@ -449,9 +461,11 @@ def main():
     args = parser.parse_args()
 
     pfam_db = args.external_db + "/Pfam-A.hmm.dat.gz"
+    dram_form = args.external_db + "/genome_summary_form.tsv"
 
     ### Calling functions
     (pfam_desc) = pfam_parser(pfam_db)
+    (dram_desc) = dram_parser(dram_form)
     (reps_list, taxonomy) = relab_parser(args.relab)
 
     if args.core_mode == "pan":
@@ -478,7 +492,7 @@ def main():
         exit(
             "The option "
             + args.core_mode
-            + " is not allowed. Chose either `pan` or `core`"
+            + " is not allowed. Chose eaither `pan` or `core`"
         )
 
     community_writer(functions_dict, all_kos, all_pfams, args.output)

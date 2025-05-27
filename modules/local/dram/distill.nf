@@ -6,6 +6,7 @@ process DRAM_DISTILL {
         ? 'https://depot.galaxyproject.org/singularity/dram:1.3.5--pyhdfd78af_0'
         : 'quay.io/biocontainers/dram:1.3.5--pyhdfd78af_0'}"
 
+
     containerOptions {
         def arg = "--volume"
         if (workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') {
