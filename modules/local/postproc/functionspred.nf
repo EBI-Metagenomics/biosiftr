@@ -20,8 +20,8 @@ process POSTPROC_FUNCTIONSPRED {
     tuple val(meta), path("*_community_pfams.tsv"), emit: pfam_comm
     tuple val(meta), path("*_species_kegg.tsv")   , emit: kegg_spec
     tuple val(meta), path("*_community_kegg.tsv") , emit: kegg_comm
-    tuple val(meta), path("*_species_dram.tsv")   , emit: dram_spec, optional: true
-    tuple val(meta), path("*_community_dram.tsv") , emit: dram_comm, optional: true
+    tuple val(meta), path("*_species_dram_summary.tsv")   , emit: dram_spec, optional: true
+    tuple val(meta), path("*_community_dram_summary.tsv") , emit: dram_comm, optional: true
     path "versions.yml"                           , emit: versions
 
     when:
@@ -52,10 +52,10 @@ process POSTPROC_FUNCTIONSPRED {
     """
     touch ${tool}_${prefix}_community_kegg.tsv
     touch ${tool}_${prefix}_community_pfams.tsv
-    touch ${tool}_${prefix}_community_dram.tsv
+    touch ${tool}_${prefix}_community_dram_summary.tsv
     touch ${tool}_${prefix}_species_kegg.tsv
     touch ${tool}_${prefix}_species_pfams.tsv
-    touch ${tool}_${prefix}_species_dram.tsv
+    touch ${tool}_${prefix}_species_dram_summary.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
