@@ -479,8 +479,8 @@ def main():
     dram_form = args.external_db + "/genome_summary_form.tsv"
 
     ### Calling functions
-    (pfam_desc) = pfam_parser(pfam_db)
-    (dram_desc) = dram_parser(dram_form)
+    pfam_desc = pfam_parser(pfam_db)
+    dram_desc = dram_parser(dram_form)
     (reps_list, taxonomy) = relab_parser(args.relab)
 
     if args.core_mode == "pan":
