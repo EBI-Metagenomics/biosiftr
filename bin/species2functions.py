@@ -368,23 +368,6 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                             if last_element not in cazy_hits:
                                 cazy_hits.append(last_element)
 
-<<<<<<< HEAD
-                if pfam != '-':
-                    for pfam_id in pfam.split(","):
-                        if pfam_id in pfam_desc:
-                            pfam_full_desc = pfam_desc[pfam_id] + " [" + pfam_id + "]"
-                            if pfam_full_desc not in pfam_hits:
-                                pfam_hits.append(pfam_full_desc)
-
-                if kegg != "-":
-                    for ko in kegg.split(","):
-                        if ko in dram_desc:
-                            if ko not in kegg_ids:
-                                kegg_ids.append(ko)
-                            for ko_desc in dram_desc[ko]:
-                                if ko_desc not in kegg_hits:
-                                    kegg_hits.append(ko_desc)
-=======
                     if len(cazy_desc_list) > 0:
                         cazy_hits = "; ".join(cazy_desc_list)
                         rank = "D"
@@ -428,7 +411,6 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                 gene_info["kegg_id"] = kegg_id
                 gene_info["kegg_hit"] = kegg_hit
                 gene_info["rank"] = rank
->>>>>>> dev
 
                 # Aggregating annotation at genome level for species output
                 species_annot[species_clstr].setdefault("cazy_hits", []).extend(cazy_hits)
@@ -499,11 +481,7 @@ def main():
     parser.add_argument(
         "--dram_out",
         action="store_true",
-<<<<<<< HEAD
-        help="Generate dram files for DRAM_distill. Default = false",
-=======
         help="Generate dram summaries for DRAM_distill. Default = false",
->>>>>>> dev
     )
     parser.add_argument(
         "--output",
@@ -516,12 +494,7 @@ def main():
     pfam_db = args.external_db + "/Pfam-A.hmm.dat.gz"
 
     ### Calling functions
-<<<<<<< HEAD
-    (pfam_desc) = pfam_parser(pfam_db)
-=======
     pfam_desc = pfam_parser(pfam_db)
-    dram_desc = dram_parser(dram_form)
->>>>>>> dev
     (reps_list, taxonomy) = relab_parser(args.relab)
 
     if args.core_mode == "pan":
@@ -558,7 +531,7 @@ def main():
 
     if args.dram_out:
         dram_form = args.external_db + "/genome_summary_form.tsv"
-        (dram_desc) = dram_parser(dram_form)
+        dram_desc = dram_parser(dram_form)
         dram_writer(
             per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, args.output
         )

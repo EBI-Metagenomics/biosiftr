@@ -158,11 +158,7 @@ def main():
 
     (unique_matches, ave_read_len) = bam_parser(args.bwa_bam)
 
-<<<<<<< HEAD
-    fp_control(out_root, genomes_len, unique_matches, ave_read_len, args.cov_thres)
-=======
     fp_control(out_root, genomes_len, unique_matches, ave_read_len, cov_thres)
->>>>>>> dev
 
 
 if __name__ == "__main__":
