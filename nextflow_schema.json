@@ -1,8 +1,8 @@
 {
     "$schema": "https://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/ebi-metagenomics/shallowmapping/master/nextflow_schema.json",
-    "title": "ebi-metagenomics/shallowmapping pipeline parameters",
-    "description": "Shallow-shotgun mapping pipeline",
+    "$id": "https://raw.githubusercontent.com/ebi-metagenomics/biosiftr/master/nextflow_schema.json",
+    "title": "ebi-metagenomics/biosiftr pipeline parameters",
+    "description": "BioSIFTR pipeline for shallow-shotgun data analysis",
     "type": "object",
     "definitions": {
         "input_output_options": {
@@ -25,7 +25,7 @@
                 },
                 "biome": {
                     "type": "string",
-                    "description": "This can be any of the MGnify catalogues for which shallow-mapping databases are currently available",
+                    "description": "This can be any of the MGnify catalogues for which BioSIFTR databases are currently available",
                     "enum": [
                         "chicken-gut-v1-0-1",
                         "cow-rumen-v1-0-1",
@@ -43,17 +43,17 @@
                 },
                 "run_bwa": {
                     "type": "boolean",
-		    "default": false,
+                    "default": false,
                     "description": "Generate extra results of taxonomic and functional profiles using bwa-mem2"
                 },
                 "run_dram": {
                     "type": "boolean",
-		    "default": false,
+                    "default": false,
                     "description": "Generate dram visuals"
                 },
                 "core_mode": {
                     "type": "boolean",
-		    "default": false,
+                    "default": false,
                     "description": "The pipeline will use the core functional annotations instead of pangenome functional annotations."
                 },
                 "outdir": {

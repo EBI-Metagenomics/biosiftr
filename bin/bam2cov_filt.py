@@ -120,7 +120,7 @@ def fp_control(out_root, genomes_len, unique_matches, ave_read_len, cov):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="This script process the bam file generated using bwa-mem2 with the flag -M. The bam file has to be filtered using -F4 -F256 flags, then sorted and indexed. The output of this script is a table of relative abundance of genomes based on unique mapping reads. Only genomes having a mean depth coverage larger that `cov_thres` are considered."
+        description="This script process the bam file generated using bwa-mem2 with the flag -M. The bam file has to be filtered using -F4 -F256 flags, then sorted and indexed. The output of this script is a table of relative abundance of genomes based on unique mapping reads. Only genomes having a mean depth coverage larger than `cov_thres` are considered."
     )
     parser.add_argument(
         "--bwa_bam",
@@ -132,7 +132,7 @@ def main():
         "--cov_thres",
         type=str,
         help="Coverage threshold cut-off",
-        required=True,
+        required=False,
     )
     parser.add_argument(
         "--prefix",
@@ -141,6 +141,12 @@ def main():
         required=False,
     )
     args = parser.parse_args()
+
+
+    if args.cov_thres:
+        cov_thres = args.cov_thres
+    else:
+        cov_thres = 0.1
 
     if args.prefix:
         out_root = args.prefix
@@ -152,7 +158,11 @@ def main():
 
     (unique_matches, ave_read_len) = bam_parser(args.bwa_bam)
 
+<<<<<<< HEAD
     fp_control(out_root, genomes_len, unique_matches, ave_read_len, args.cov_thres)
+=======
+    fp_control(out_root, genomes_len, unique_matches, ave_read_len, cov_thres)
+>>>>>>> dev
 
 
 if __name__ == "__main__":

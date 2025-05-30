@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/ebi-metagenomics/shallowmapping/master/assets/schema_input.json",
-    "title": "ebi-metagenomics/shallowmapping pipeline - params.input schema",
+    "$id": "https://raw.githubusercontent.com/ebi-metagenomics/biosiftr/master/assets/schema_input.json",
+    "title": "ebi-metagenomics/biosiftr pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
     "type": "array",
     "items": {

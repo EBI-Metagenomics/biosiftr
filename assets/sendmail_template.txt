@@ -9,12 +9,12 @@ Content-Type: text/html; charset=utf-8
 $email_html
 
 --nfcoremimeboundary
-Content-Type: image/png;name="ebi-metagenomics-shallowmapping_logo.png"
+Content-Type: image/png;name="ebi-metagenomics-biosiftr.png"
 Content-Transfer-Encoding: base64
 Content-ID: <nfcorepipelinelogo>
-Content-Disposition: inline; filename="ebi-metagenomics-shallowmapping_logo_light.png"
+Content-Disposition: inline; filename="ebi-metagenomics-biosiftr_logo_light.png"
 
-<% out << new File("$projectDir/assets/ebi-metagenomics-shallowmapping_logo_light.png").
+<% out << new File("$projectDir/assets/ebi-metagenomics-biosiftr_logo_light.png").
     bytes.
     encodeBase64().
     toString().

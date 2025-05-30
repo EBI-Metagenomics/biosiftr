@@ -1,5 +1,5 @@
 //
-// This file holds several functions specific to the main.nf workflow in the ebi-metagenomics/shallowmapping pipeline
+// This file holds several functions specific to the main.nf workflow in the ebi-metagenomics/biosiftr pipeline
 //
 
 import nextflow.Nextflow

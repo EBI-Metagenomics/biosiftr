@@ -16,7 +16,14 @@
 
 
 import argparse
+import os.path
+import sys
 import gzip
+from Bio import SeqIO
+
+##### This script use the species prediction to generate functional tables from the pangenomic profiles
+##### Alejandra Escobar, EMBL-EBI
+##### Jan 11, 2024
 
 
 def pfam_parser(pfam_data):
@@ -43,14 +50,14 @@ def pfam_parser(pfam_data):
 
 def dram_parser(dram_form):
     dram_desc = {}
-    with open(dram_form) as input_file:
+    with open(dram_form, "r") as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
             gene_id = l_line[0]
             gene_description = l_line[1].replace('"', "")
             if gene_id in dram_desc:
-                if gene_description not in dram_desc[gene_id]:
+                if not gene_description in dram_desc[gene_id]:
                     dram_desc[gene_id].append(gene_description)
             else:
                 dram_desc[gene_id] = [gene_description]
@@ -60,7 +67,7 @@ def dram_parser(dram_form):
 def relab_parser(relab_table):
     taxonomy = {}
     reps_list = []
-    with open(relab_table) as input_file:
+    with open(relab_table, "r") as input_file:
         next(input_file)
         for line in input_file:
             l_line = line.rstrip().split("\t")
@@ -90,7 +97,7 @@ def functions_finder_pan(reps_list, db_path):
         per_gene_dict[rep_genome] = []
         pan_kos = []
         pan_pfams = []
-        with open(db_file) as input_file:
+        with open(db_file, "r") as input_file:
             next(input_file)
             next(input_file)
             for line in input_file:
@@ -121,7 +128,7 @@ def functions_finder_pan(reps_list, db_path):
                         kegg_list = [kegg]
                     pan_kos = pan_kos + kegg_list
                     for current_ko in kegg_list:
-                        if current_ko not in species_kos[rep_genome]:
+                        if not current_ko in species_kos[rep_genome]:
                             species_kos[rep_genome].append(current_ko)
 
                 if pfam != "-":
@@ -131,7 +138,7 @@ def functions_finder_pan(reps_list, db_path):
                         pfam_list = [pfam]
                     pan_pfams = pan_pfams + pfam_list
                     for current_pfam in pfam_list:
-                        if current_pfam not in species_pfams[rep_genome]:
+                        if not current_pfam in species_pfams[rep_genome]:
                             species_pfams[rep_genome].append(current_pfam)
 
         pan_kos = list(set(pan_kos))
@@ -180,7 +187,7 @@ def functions_finder_core(reps_list, db_path):
         per_gene_dict[rep_genome] = []
         pan_kos = []
         pan_pfams = []
-        with open(db_file) as input_file:
+        with open(db_file, "r") as input_file:
             next(input_file)
             next(input_file)
             for line in input_file:
@@ -212,7 +219,7 @@ def functions_finder_core(reps_list, db_path):
                             kegg_list = [kegg]
                         pan_kos = pan_kos + kegg_list
                         for current_ko in kegg_list:
-                            if current_ko not in species_kos[rep_genome]:
+                            if not current_ko in species_kos[rep_genome]:
                                 species_kos[rep_genome].append(current_ko)
 
                     if pfam != "-":
@@ -222,7 +229,7 @@ def functions_finder_core(reps_list, db_path):
                             pfam_list = [pfam]
                         pan_pfams = pan_pfams + pfam_list
                         for current_pfam in pfam_list:
-                            if current_pfam not in species_pfams[rep_genome]:
+                            if not current_pfam in species_pfams[rep_genome]:
                                 species_pfams[rep_genome].append(current_pfam)
 
         pan_kos = list(set(pan_kos))
@@ -312,8 +319,8 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
     ]
     counter = 0
 
-    with open(output + "_species_dram.tsv", "w") as output_sp, open(
-        output + "_community_dram.tsv", "w"
+    with open(output + "_species_dram_summary.tsv", "w") as output_sp, open(
+        output + "_community_dram_summary.tsv", "w"
     ) as output_comm:
         output_sp.write("\t".join(dram_header) + "\n")
 
@@ -361,6 +368,7 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                             if last_element not in cazy_hits:
                                 cazy_hits.append(last_element)
 
+<<<<<<< HEAD
                 if pfam != '-':
                     for pfam_id in pfam.split(","):
                         if pfam_id in pfam_desc:
@@ -376,6 +384,51 @@ def dram_writer(per_gene_dict, gene_positions, taxonomy, pfam_desc, dram_desc, o
                             for ko_desc in dram_desc[ko]:
                                 if ko_desc not in kegg_hits:
                                     kegg_hits.append(ko_desc)
+=======
+                    if len(cazy_desc_list) > 0:
+                        cazy_hits = "; ".join(cazy_desc_list)
+                        rank = "D"
+                    else:
+                        cazy_hits = ""
+                gene_info["cazy_hits"] = cazy_hits
+
+                if pfam == "-":
+                    pfam_hits = ""
+                else:
+                    pfam_desc_list = set()
+                    for pfam_id in pfam.split(","):
+                        if pfam_id in pfam_desc:
+                            pfam_full_desc = pfam_desc[pfam_id] + " [" + pfam_id + "]"
+                            pfam_desc_list.add(pfam_full_desc)
+                    if len(pfam_desc_list) > 0:
+                        pfam_hits = ";".join(pfam_desc_list)
+                        rank = "D"
+                    else:
+                        pfam_hits = ""
+                gene_info["pfam_hits"] = pfam_hits
+
+                if kegg == "-":
+                    kegg_id = ""
+                    kegg_hit = ""
+                else:
+                    kegg = kegg.replace(",", ";")
+                    kegg_id_list, ko_desc_list = set(), set()
+                    for ko in kegg.split(";"):
+                        if ko in dram_desc:
+                            kegg_id_list.add(ko)
+                            for ko_desc in dram_desc[ko]:
+                                ko_desc_list.add(ko_desc)
+                    if len(kegg_id_list) > 0:
+                        rank = "C"
+                        kegg_id = ";".join(kegg_id_list)
+                        kegg_hit = ";".join(ko_desc_list)
+                    else:
+                        kegg_id = ""
+                        kegg_hit = ""
+                gene_info["kegg_id"] = kegg_id
+                gene_info["kegg_hit"] = kegg_hit
+                gene_info["rank"] = rank
+>>>>>>> dev
 
                 # Aggregating annotation at genome level for species output
                 species_annot[species_clstr].setdefault("cazy_hits", []).extend(cazy_hits)
@@ -446,7 +499,11 @@ def main():
     parser.add_argument(
         "--dram_out",
         action="store_true",
+<<<<<<< HEAD
         help="Generate dram files for DRAM_distill. Default = false",
+=======
+        help="Generate dram summaries for DRAM_distill. Default = false",
+>>>>>>> dev
     )
     parser.add_argument(
         "--output",
@@ -459,7 +516,12 @@ def main():
     pfam_db = args.external_db + "/Pfam-A.hmm.dat.gz"
 
     ### Calling functions
+<<<<<<< HEAD
     (pfam_desc) = pfam_parser(pfam_db)
+=======
+    pfam_desc = pfam_parser(pfam_db)
+    dram_desc = dram_parser(dram_form)
+>>>>>>> dev
     (reps_list, taxonomy) = relab_parser(args.relab)
 
     if args.core_mode == "pan":

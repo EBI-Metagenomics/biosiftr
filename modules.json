@@ -1,6 +1,6 @@
 {
-    "name": "ebi-metagenomics/shallowmapping",
-    "homePage": "https://github.com/ebi-metagenomics/shallowmapping",
+    "name": "ebi-metagenomics/biosiftr",
+    "homePage": "https://github.com/ebi-metagenomics/biosiftr",
     "repos": {
         "https://github.com/EBI-Metagenomics/nf-modules/": {
             "modules": {

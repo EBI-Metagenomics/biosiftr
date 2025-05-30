@@ -1,11 +1,11 @@
 //
-// This file holds several functions specific to the workflow/shallowmapping.nf in the ebi-metagenomics/shallowmapping pipeline
+// This file holds several functions specific to the workflow/biosiftr.nf in the ebi-metagenomics/biosiftr pipeline
 //
 
 import nextflow.Nextflow
 import groovy.text.SimpleTemplateEngine
 
-class WorkflowShallowmapping {
+class WorkflowBiosiftr {
 
     //
     // Check and validate parameters
