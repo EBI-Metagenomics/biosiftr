@@ -3,11 +3,11 @@ nextflow_pipeline {
     name "Test shallow-mapping pipeline main.nf"
     script "../main.nf"
 
-    test("Shallow shotgun single-end and paired-end reads chicken-gut-v1-0-1 default params") {
+    test("Shallow shotgun single-end and paired-end reads human-vaginal-v1-0 default params") {
         when {
             params {
                 input = "${baseDir}/tests/test_samplesheet.csv"
-                biome = "chicken-gut-v1-0-1"
+                biome = "human-vaginal-v1-0"
             }
         }
         then {
@@ -17,11 +17,11 @@ nextflow_pipeline {
         }
     }
 
-    test("Shallow shotgun single-end and paired-end reads chicken-gut-v1-0-1 with bwa and core options") {
+    test("Shallow shotgun single-end and paired-end reads human-vaginal-v1-0 with bwa and core options") {
         when {
             params {
                 input = "${baseDir}/tests/test_samplesheet.csv"
-                biome = "chicken-gut-v1-0-1"
+                biome = "human-vaginal-v1-0"
                 run_bwa = true
                 core_mode = true
             }

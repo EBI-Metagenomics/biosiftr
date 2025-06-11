@@ -1,0 +1,2 @@
+modules/ebi-metagenomics/**/tests*
+modules/nf-core/**/tests*
