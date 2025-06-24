@@ -11,9 +11,12 @@ lint:
     - docs/images/nf-core-biosiftr_logo_light.png
     - pyproject.toml
     - .gitignore
+    - .github/actions/get-shards/action.yml
+    - .github/actions/nf-test/action.yml
     - .github/ISSUE_TEMPLATE/config.yml
     - .github/workflows/*
     - .github/workflows/branch.yml
+    - .github/workflows/nf-test.yml
     - .github/CONTRIBUTING.md
     - .github/PULL_REQUEST_TEMPLATE.md
     - conf/igenomes.config
@@ -58,3 +61,4 @@ template:
   skip:
     - igenomes
     - nf_core_configs
+  is_nfcore: false
