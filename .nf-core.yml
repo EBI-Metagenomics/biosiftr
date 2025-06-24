@@ -47,16 +47,6 @@ lint:
     - LICENSE
   multiqc_config:
     - report_comment
-  nextflow_config:
-    - manifest.name
-    - manifest.homePage
-    - process.cpus
-    - process.memory
-    - process.time
-    - custom_config
-    - params.max_cpus
-    - params.max_time
-    - params.max_memory
 repository_type: pipeline
 template:
   prefix: ebi-metagenomics
