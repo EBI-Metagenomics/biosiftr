@@ -48,8 +48,7 @@ workflow DOWNLOAD_REFERENCES {
         biome_kegg_completeness_db = biome_kegg_completeness_db_dir
         biome_bwa_db = bwamem2_mode ? biome_bwa_db_files.collect() : Channel.empty()
     } else {
-        println "Genomes databases NOT found. Running sbwf to download DBs"
-
+        println "Pre-computed genomes databases NOT found. Running sbwf to download DBs"
         DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS(biome, bwamem2_mode)
         biome_sourmash_db = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.sourmash_db.first()
         biome_genomes_metadata = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.genomes_metadata_tsv.first()

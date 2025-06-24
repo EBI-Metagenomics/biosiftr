@@ -8,4 +8,5 @@ results/
 .DS_Store
 *.pyc
 bin/
-tests/bwa2mem/human_phix.fasta.*
+tests/bwamem2/human_phix.fasta*
+tests/reference_dbs/human-vaginal-v1-0/bwa_reps.fna.pac
