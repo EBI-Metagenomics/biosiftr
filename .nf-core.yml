@@ -1,4 +1,6 @@
 lint:
+  nextflow_config: false
+  nf_test_content: false
   files_exist:
     - CODE_OF_CONDUCT.md
     - CHANGELOG.md
