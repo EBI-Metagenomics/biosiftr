@@ -45,6 +45,7 @@ lint:
     - .gitignore
     - pyproject.toml
     - LICENSE
+    - .prettierrc.yml
   multiqc_config:
     - report_comment
 repository_type: pipeline
