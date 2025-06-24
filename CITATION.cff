@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Escobar-Zepeda"
+  given-names: "Alejandra"
+  orcid: "https://orcid.org/0000-0003-3549-9115"
+- family-names: "Beracochea"
+  given-names: "Martin"
+  orcid: "https://orcid.org/0000-0003-3472-3736"
+title: "BioSIFTR"
+version: 1.2.0
+doi: 10.48546/WORKFLOWHUB.WORKFLOW.1735.1
+date-released: 2025-06-17
+url: "https://github.com/EBI-Metagenomics/biosiftr_extended_methods"
