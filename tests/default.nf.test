@@ -9,8 +9,6 @@ nextflow_pipeline {
     test("bioSIFTR running on single-end and paired-end reads. Biome human-vaginal-v1-0 default params") {
         when {
             params {
-                input = "${baseDir}/tests/test_samplesheet.csv"
-                biome = "human-vaginal-v1-0"
                 outdir = "$outputDir"
             }
         }
@@ -44,8 +42,6 @@ nextflow_pipeline {
     test("bioSIFTR running on single-end and paired-end reads. Biome human-vaginal-v1-0 with bwa, core, and dram options") {
         when {
             params {
-                input = "${baseDir}/tests/test_samplesheet.csv"
-                biome = "human-vaginal-v1-0"
                 outdir = "$outputDir"
                 run_bwa = true
                 core_mode = true
