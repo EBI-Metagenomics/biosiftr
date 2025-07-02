@@ -33,6 +33,7 @@ The pipeline requires [Nextflow](https://www.nextflow.io/docs/latest/getstarted.
 The first time you run the pipeline, it will download the required MGnify genomes catalogue reference files and the human_phiX bwa-mem2 index. Other common hosts like mouse will be also automatically downloaded.
 
 Running the pipeline using bwa-mem2 is optional. If you want to run the pipeline with this option set the `--download_bwa true`. This database will occupy considerable storage in your system, depending on the biome (approx database sizes):
+
 - 106 G marine-v2-0
 - 38 G human-gut-v2-0-2
 - 29 G mouse-gut-v1-0

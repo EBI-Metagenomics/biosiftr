@@ -1,4 +1,6 @@
 lint:
+  nextflow_config: false
+  nf_test_content: false
   files_exist:
     - CODE_OF_CONDUCT.md
     - CHANGELOG.md
@@ -11,9 +13,12 @@ lint:
     - docs/images/nf-core-biosiftr_logo_light.png
     - pyproject.toml
     - .gitignore
+    - .github/actions/get-shards/action.yml
+    - .github/actions/nf-test/action.yml
     - .github/ISSUE_TEMPLATE/config.yml
     - .github/workflows/*
     - .github/workflows/branch.yml
+    - .github/workflows/nf-test.yml
     - .github/CONTRIBUTING.md
     - .github/PULL_REQUEST_TEMPLATE.md
     - conf/igenomes.config
@@ -40,21 +45,14 @@ lint:
     - .gitignore
     - pyproject.toml
     - LICENSE
+    - .prettierrc.yml
+  actions_ci: false
   multiqc_config:
     - report_comment
-  nextflow_config:
-    - manifest.name
-    - manifest.homePage
-    - process.cpus
-    - process.memory
-    - process.time
-    - custom_config
-    - params.max_cpus
-    - params.max_time
-    - params.max_memory
 repository_type: pipeline
 template:
   prefix: ebi-metagenomics
   skip:
     - igenomes
     - nf_core_configs
+  is_nfcore: false
