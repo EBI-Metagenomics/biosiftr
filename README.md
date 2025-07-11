@@ -88,7 +88,6 @@ Use `--core_mode true` for large catalogues like the human-gut to avoid over-pre
 Nextflow option `-profile` can be used to select a suitable config for your computational resources. You can add profile files to the `config` directory.
 Nextflow option `-resume` can be used to re-run the pipeline from the last successfully finished step.
 
-
 #### Available biomes
 
 This can be any of the MGnify catalogues for which shallow-mapping databases are currently available

@@ -223,6 +223,7 @@ workflow BIOSIFTR {
             }
 
         ALIGN_BWAMEM2(hq_reads.join(species_richness_ch, by: 0), genomes_ref)
+
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
         POSTPROC_BWATAXO(ALIGN_BWAMEM2.out.cov_file, DOWNLOAD_REFERENCES.out.biome_genomes_metadata)
@@ -267,9 +268,7 @@ workflow BIOSIFTR {
 
         BWA_INT_MODU(BWA_COMM_KC.out.kegg_comp.collect { it[1] }, 'bwa_modules')
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
-
     }
-
 
     // ---- Multiqc report ---- //
     CUSTOM_DUMPSOFTWAREVERSIONS(
