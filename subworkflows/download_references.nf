@@ -6,7 +6,7 @@ workflow DOWNLOAD_REFERENCES {
     take:
     biome
     bwamem2_mode
-    
+
 
     main:
     dram_dbs = Channel.empty()
@@ -34,9 +34,13 @@ workflow DOWNLOAD_REFERENCES {
 
     // Human PhiX genome used to decontaminate the reads
     human_phix_index_dir = file("${params.decontamination_indexes}/human_phix*")
-    human_phix_index = human_phix_index_dir.size() > 0
-        ? human_phix_index_dir
-        : DOWNLOAD_HUMAN_PHIX_BWAMEM2_INDEX().out.human_phix_index.first()
+    human_phix_index = channel.empty()
+
+    if ( human_phix_index_dir.size() > 0 ) {
+        human_phix_index = channel.from( human_phix_index_dir )
+    } else {
+        human_phix_index = DOWNLOAD_HUMAN_PHIX_BWAMEM2_INDEX().human_phix_index.first()
+    }
 
     // Check if all required files exist for the biome
 
@@ -48,8 +52,7 @@ workflow DOWNLOAD_REFERENCES {
         biome_kegg_completeness_db = biome_kegg_completeness_db_dir
         biome_bwa_db = bwamem2_mode ? biome_bwa_db_files.collect() : Channel.empty()
     } else {
-        println "Genomes databases NOT found. Running sbwf to download DBs"
-
+        println "Pre-computed genomes databases NOT found. Running sbwf to download DBs"
         DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS(biome, bwamem2_mode)
         biome_sourmash_db = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.sourmash_db.first()
         biome_genomes_metadata = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.genomes_metadata_tsv.first()
@@ -58,7 +61,7 @@ workflow DOWNLOAD_REFERENCES {
         biome_bwa_db = bwamem2_mode ? DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.bwamem2_index.collect() : Channel.empty()
     }
 
-    human_phix_index_ch = channel.from( human_phix_index ).collect()
+    human_phix_index_ch = human_phix_index.collect()
         .map { db_files ->
             [[id: "human_phix"], db_files]
         }

@@ -17,8 +17,8 @@ process ALIGN_BWAMEM2 {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    # These values are hardcoded at the moment based on our observations in the synthetic microbial communities, 
-    # but the idea is to improve this part and the pan/core modes modelling based on database features. 
+    // These values are hardcoded at the moment based on our observations in the synthetic microbial communities, 
+    // but the idea is to improve this part and the pan/core modes modelling based on database features. 
     def cov = '0.1'
     if (sp_richness > 150) {
         cov = '0.01'
