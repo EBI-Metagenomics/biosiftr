@@ -16,10 +16,7 @@
 
 
 import argparse
-import os.path
-import sys
 import gzip
-from Bio import SeqIO
 
 ##### This script use the species prediction to generate functional tables from the pangenomic profiles
 ##### Alejandra Escobar, EMBL-EBI
