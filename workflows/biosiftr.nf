@@ -215,8 +215,8 @@ workflow BIOSIFTR {
 
         // Mapping reads and filtering positive genomes according with mapping coverage threshold
         POSTPROC_SOURMASHTAXO.out.sm_taxo
-            .map{ meta, taxo_file -> 
-                species_richness = taxo_file.countLines()
+            .map{ meta, taxo_file ->
+                def species_richness = taxo_file.countLines()
                 return tuple(meta, species_richness)
             }.set {
                 species_richness_ch
