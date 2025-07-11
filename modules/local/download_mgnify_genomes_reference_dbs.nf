@@ -9,11 +9,11 @@ process DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS {
     val download_bwamem2
 
     output:
-    tuple val(biome), path("genomes-all_metadata.tsv"),                     emit: genomes_metadata_tsv
-    tuple val(biome), path("functional_profiles_DB/"),                      emit: pangenome_functional_anns_db
-    tuple val(biome), path("kegg_completeness_DB/"),                        emit: kegg_completeness_db
-    tuple val(biome), path("sourmash_species_representatives_k21.sbt.zip"), emit: sourmash_db
-    tuple val(biome), path("bwamem2_index/")                              , emit: bwamem2_index, optional: true
+    path("genomes-all_metadata.tsv"),                     emit: genomes_metadata_tsv
+    path("functional_profiles_DB/"),                      emit: pangenome_functional_anns_db
+    path("kegg_completeness_DB/"),                        emit: kegg_completeness_db
+    path("sourmash_species_representatives_k21.sbt.zip"), emit: sourmash_db
+    path("bwamem2_index/")                              , emit: bwamem2_index, optional: true
 
     script:
     def matcher = biome =~ /(.+?)(-v[0-9]+-[0-9]+(?:-[0-9]+)?)?$/
