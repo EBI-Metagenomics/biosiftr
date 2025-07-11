@@ -215,14 +215,15 @@ workflow BIOSIFTR {
 
         // Mapping reads and filtering positive genomes according with mapping coverage threshold
         POSTPROC_SOURMASHTAXO.out.sm_taxo
-            .map{ meta, taxo_file -> 
-                species_richness = taxo_file.countLines()
+            .map{ meta, taxo_file ->
+                def species_richness = taxo_file.countLines()
                 return tuple(meta, species_richness)
             }.set {
                 species_richness_ch
             }
 
         ALIGN_BWAMEM2(hq_reads.join(species_richness_ch, by: 0), genomes_ref)
+
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
         POSTPROC_BWATAXO(ALIGN_BWAMEM2.out.cov_file, DOWNLOAD_REFERENCES.out.biome_genomes_metadata)
@@ -267,9 +268,7 @@ workflow BIOSIFTR {
 
         BWA_INT_MODU(BWA_COMM_KC.out.kegg_comp.collect { it[1] }, 'bwa_modules')
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
-
     }
-
 
     // ---- Multiqc report ---- //
     CUSTOM_DUMPSOFTWAREVERSIONS(
