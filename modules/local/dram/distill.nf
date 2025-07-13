@@ -6,21 +6,21 @@ process DRAM_DISTILL {
         ? 'https://depot.galaxyproject.org/singularity/dram:1.3.5--pyhdfd78af_0'
         : 'quay.io/biocontainers/dram:1.3.5--pyhdfd78af_0'}"
 
-
     containerOptions {
         def arg = "--volume"
         if (workflow.containerEngine == 'singularity' || workflow.containerEngine == 'apptainer') {
             arg = "--bind"
         }
         def mounts = [
-            "${params.reference_dbs}/dram_dbs/:/data/",
-            "${params.reference_dbs}/dram_dbs/DRAM_CONFIG.json:/usr/local/lib/python3.10/site-packages/mag_annotator/CONFIG",
+            "${task.workDir}/${reference_dbs}/dram_dbs/:/data/",
+            "${task.workDir}/${reference_dbs}/dram_dbs/DRAM_CONFIG.json:/usr/local/lib/python3.10/site-packages/mag_annotator/CONFIG",
         ]
         return "${arg} " + mounts.join(" ${arg} ")
     }
 
     input:
     tuple val(meta), path(dram_summary)
+    path(reference_dbs)
     val tool      // sm for sourmash or bwa for bwa-mem2
     val in_type   // species or community
 
