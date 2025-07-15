@@ -20,6 +20,12 @@ process DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS {
     def biome_name = matcher[0][1]
     def biome_version = matcher[0][2] ? matcher[0][2].substring(1) : null
 
+    if (biome_version) {
+        biome_version = biome_version.replace('-', '.')
+    } else {
+        exit("Error the biome version of ${biome} can't be parsed.")
+    }
+
     // MGnify genomes catalogue data //
     // Example: https://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/honeybee-gut/v1.0.1/
     def biome_catalogue_ftp = "ftp://ftp.ebi.ac.uk/pub/databases/metagenomics/mgnify_genomes/${biome_name}/${biome_version}"
