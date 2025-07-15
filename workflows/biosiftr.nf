@@ -174,7 +174,7 @@ workflow BIOSIFTR {
     if (params.run_dram) {
         SM_DRAM(
             SM_FUNC.out.dram_spec,
-            file(params.reference_dbs, checkIfExists: true),
+            file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
             'sm',
             'species',
         )
@@ -183,7 +183,7 @@ workflow BIOSIFTR {
         ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
         DRAM_DISTILL(
             ch_dram_community,
-            file(params.reference_dbs, checkIfExists: true),
+            file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
             'sm',
             'community',
         )
@@ -258,7 +258,7 @@ workflow BIOSIFTR {
         if (params.run_dram) {
             BWA_DRAM(
                 BWA_FUNC.out.dram_spec,
-                file(params.reference_dbs, checkIfExists: true),
+                file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
                 'bwa',
                 'species',
             )
@@ -267,7 +267,7 @@ workflow BIOSIFTR {
             ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
             BWA_INT_DRAM(
                 ch_bwa_dram_community,
-                file(params.reference_dbs, checkIfExists: true),
+                file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
                 'bwa',
                 'community',
             )
