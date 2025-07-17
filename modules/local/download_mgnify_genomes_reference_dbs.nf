@@ -32,7 +32,7 @@ process DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS {
 
     // Shallow mapping specific //
     // This FTP path contains the MGnify Genomes catalogue processed annotations, ready to be used with this pipeline
-    def ftp_base = "ftp://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/mgnify_genomes/${biome_name}_reps/${biome_version}/"
+    def ftp_base = "ftp://ftp.ebi.ac.uk/pub/databases/metagenomics/pipelines/references/mgnify_genomes/${biome_name}_reps/${biome_version}"
 
     def functions_ftp = "${ftp_base}/pangenome_functional_profiles.tar.gz"
     def kegg_ftp = "${ftp_base}/kegg_completeness.tar.gz"
@@ -40,7 +40,7 @@ process DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS {
     def reps_bwamem2_index_ftp = "${ftp_base}/reps_bwamem2.tar.gz"
 
     """
-    if [[ "${download_bwamem2}" == 'True' ]];
+    if [[ "${download_bwamem2}" == 'true' ]];
     then
         # Downloading the host genome #
         mkdir -p bwamem2_index/

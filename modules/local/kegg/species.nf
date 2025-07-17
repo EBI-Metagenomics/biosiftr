@@ -11,7 +11,6 @@ process KEGG_SPECIES {
     val(tool)
     val(mode)
     path(kegg_db)
-    
 
     output:
     tuple val(meta), path("*.tsv"), emit: spec_kegg_comp
@@ -41,6 +40,7 @@ process KEGG_SPECIES {
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
     """
     touch ${prefix}_${tool}_species_kegg_modules_comp.tsv
 
