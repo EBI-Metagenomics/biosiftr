@@ -30,7 +30,6 @@ process POSTPROC_FUNCTIONSPRED {
     script:
     def dram_arg = (run_dram) ? "--dram_out" : ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
     """
     species2functions.py \\
         --pangenome_db $pangenome_db \\
@@ -42,7 +41,8 @@ process POSTPROC_FUNCTIONSPRED {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        postproc: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        biopython: \$(python -c "import importlib.metadata; print(importlib.metadata.version('biopython'))")
     END_VERSIONS
     """
 
@@ -59,7 +59,8 @@ process POSTPROC_FUNCTIONSPRED {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        postproc: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        biopython: \$(python -c "import importlib.metadata; print(importlib.metadata.version('biopython'))")
     END_VERSIONS
     """
 }

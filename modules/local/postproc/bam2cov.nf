@@ -19,7 +19,6 @@ process POSTPROC_BAM2COV {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.1' // WARN: Python script with no version control. This would be v1.1 of this script.
     """
     bam2cov_filt.py \\
         --bwa_bam $bam \\
@@ -29,20 +28,21 @@ process POSTPROC_BAM2COV {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        postproc: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        pysam: \$(python3 -c "import pkg_resources; print(pkg_resources.get_distribution('pysam').version)")
     END_VERSIONS
     """
 
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.0'
     """
     touch ${prefix}_u_relab.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        postproc: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        pysam: \$(python3 -c "import pkg_resources; print(pkg_resources.get_distribution('pysam').version)")
     END_VERSIONS
     """
 }

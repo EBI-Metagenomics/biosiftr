@@ -20,7 +20,6 @@ process POSTPROC_BWATAXO {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
     """
     bwa_genome2species.py \\
         --genomes_relab $cov_file  \\
@@ -30,20 +29,21 @@ process POSTPROC_BWATAXO {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        postproc: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        biopython: \$(python -c "import importlib.metadata; print(importlib.metadata.version('biopython'))")
     END_VERSIONS
     """
 
     stub:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.0'
     """
     touch ${prefix}_bwa_species.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        postproc: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        biopython: \$(python -c "import importlib.metadata; print(importlib.metadata.version('biopython'))")
     END_VERSIONS
     """
 }
