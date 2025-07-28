@@ -18,7 +18,6 @@ process POSTPROC_INTEGRATOR {
 
     script:
     def args = task.ext.args ?: ''
-    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
     """
     matrix_integrator.py \\
         --input ${files_list.join(' ')} \\
@@ -27,19 +26,20 @@ process POSTPROC_INTEGRATOR {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        postproc: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        biopython: \$(python -c "import importlib.metadata; print(importlib.metadata.version('biopython'))")
     END_VERSIONS
     """
 
     stub:
     def args = task.ext.args ?: ''
-    def VERSION = '1.0'
     """
     touch ${annot_type}_matrix.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        postproc: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        biopython: \$(python -c "import importlib.metadata; print(importlib.metadata.version('biopython'))")
     END_VERSIONS
     """
 }
