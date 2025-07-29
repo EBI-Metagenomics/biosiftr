@@ -11,7 +11,6 @@ process KEGG_SPECIES {
     val(tool)
     val(mode)
     path(kegg_db)
-    
 
     output:
     tuple val(meta), path("*.tsv"), emit: spec_kegg_comp
@@ -23,7 +22,6 @@ process KEGG_SPECIES {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.0' // WARN: Python script with no version control. This would be v1.0 of this script.
     """
     species2pathways.py \\
         --kegg_comp_db $kegg_db \\
@@ -34,7 +32,8 @@ process KEGG_SPECIES {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        kegg_sp: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        biopython: \$(python -c "import importlib.metadata; print(importlib.metadata.version('biopython'))")
     END_VERSIONS
     """
 
@@ -46,7 +45,8 @@ process KEGG_SPECIES {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        kegg_sp: $VERSION
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        biopython: \$(python -c "import importlib.metadata; print(importlib.metadata.version('biopython'))")
     END_VERSIONS
     """
 }

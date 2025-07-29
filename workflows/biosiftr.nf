@@ -35,7 +35,7 @@ include { POSTPROC_INTEGRATOR as INTEGRA_TAXO      } from '../modules/local/post
 include { POSTPROC_INTEGRATOR as INTEGRA_KO        } from '../modules/local/postproc/integrator'
 include { POSTPROC_INTEGRATOR as INTEGRA_PFAM      } from '../modules/local/postproc/integrator'
 include { POSTPROC_INTEGRATOR as INTEGRA_MODU      } from '../modules/local/postproc/integrator'
-include { DRAM_DISTILL            } from '../modules/local/dram/distill'
+include { DRAM_DISTILL                             } from '../modules/local/dram/distill'
 
 include { POSTPROC_INTEGRATOR as BWA_INT_TAXO      } from '../modules/local/postproc/integrator'
 include { POSTPROC_INTEGRATOR as BWA_INT_KO        } from '../modules/local/postproc/integrator'
@@ -99,7 +99,7 @@ workflow BIOSIFTR {
             return tuple(meta + [single_end: false], reads)
         }
     }
-    ch_reads = Channel.fromSamplesheet("input").map(groupReads)// [ meta, [raw_reads] ]
+    ch_reads = Channel.fromSamplesheet("input").map(groupReads) // [ meta, [raw_reads] ]
 
     // ---- PREPROCESSING: Trimming, decontamination, and post-treatment qc ---- //
     FASTP(ch_reads, [], [], [], [])
@@ -172,11 +172,21 @@ workflow BIOSIFTR {
     }
 
     if (params.run_dram) {
-        SM_DRAM(SM_FUNC.out.dram_spec, 'sm', 'species')
+        SM_DRAM(
+            SM_FUNC.out.dram_spec,
+            file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
+            'sm',
+            'species',
+        )
         ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
 
         ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
-        DRAM_DISTILL(ch_dram_community, 'sm', 'community')
+        DRAM_DISTILL(
+            ch_dram_community,
+            file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
+            'sm',
+            'community',
+        )
         ch_versions = ch_versions.mix(DRAM_DISTILL.out.versions.first())
     }
 
@@ -215,10 +225,11 @@ workflow BIOSIFTR {
 
         // Mapping reads and filtering positive genomes according with mapping coverage threshold
         POSTPROC_SOURMASHTAXO.out.sm_taxo
-            .map{ meta, taxo_file ->
+            .map { meta, taxo_file ->
                 def species_richness = taxo_file.countLines()
                 return tuple(meta, species_richness)
-            }.set {
+            }
+            .set {
                 species_richness_ch
             }
 
@@ -245,11 +256,21 @@ workflow BIOSIFTR {
         }
 
         if (params.run_dram) {
-            BWA_DRAM(BWA_FUNC.out.dram_spec, 'bwa', 'species')
+            BWA_DRAM(
+                BWA_FUNC.out.dram_spec,
+                file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
+                'bwa',
+                'species',
+            )
             ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
 
             ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
-            BWA_INT_DRAM(ch_bwa_dram_community, 'bwa', 'community')
+            BWA_INT_DRAM(
+                ch_bwa_dram_community,
+                file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
+                'bwa',
+                'community',
+            )
             ch_versions = ch_versions.mix(BWA_INT_DRAM.out.versions.first())
         }
 

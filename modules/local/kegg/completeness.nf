@@ -7,7 +7,7 @@ process KEGG_COMPLETENESS {
     input:
     tuple val(meta), path(kos_table)
     val(tool)
-    
+
     output:
     tuple val(meta), path("*_community_kegg_modules_comp.tsv"), emit: kegg_comp
     path "versions.yml"                                       , emit: versions
@@ -28,13 +28,17 @@ process KEGG_COMPLETENESS {
         -o result
 
     echo "Formatting output"
-    cat result.summary.kegg_pathways.tsv | awk -v prefix=${prefix} -v tool=${tool} -F'\\t' 'NR==1 {print "module\\t" prefix "_" tool; next} {print \$1 "|" \$3 "\\t" \$2}' result.summary.kegg_pathways.tsv > ${prefix}_${tool}_community_kegg_modules_comp.tsv
+    awk -v prefix=${prefix} \\
+        -v tool=${tool} \\
+        -F'\\t' \\
+        'NR==1 {print "module\\t" prefix "_" tool; next} {print \$1 "|" \$3 "\\t" \$2}' \\
+        result.summary.kegg_pathways.tsv > ${prefix}_${tool}_community_kegg_modules_comp.tsv
 
     echo "Reformatted output done"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        kegg_comm: $VERSION
+        kegg-pathways-completeness: $VERSION
     END_VERSIONS
     """
 
@@ -47,7 +51,7 @@ process KEGG_COMPLETENESS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        kegg_comm: $VERSION
+        kegg-pathways-completeness: $VERSION
     END_VERSIONS
     """
 }
