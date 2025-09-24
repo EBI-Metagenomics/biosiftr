@@ -40,11 +40,14 @@ Running the pipeline using bwa-mem2 is optional. If you want to run the pipeline
 - 21 G cow-rumen-v1-0-1
 - 16 G sheep-rumen-v1-0
 - 15 G pig-gut-v1-0
+- 15 G tomato-rhizosphere-v1-0
 - 10 G chicken-gut-v1-0-1
+- 8.5 G maize-rhizosphere-v1-0
 - 4.5 G human-oral-v1-0-1
 - 2.0 G human-vaginal-v1-0
 - 2.2 G non-model-fish-gut-v2-0
 - 2.5 G honeybee-gut-v1-0-1
+- 1.8 G barley-rhizosphere-v1-0
 - 1.5 G zebrafish-fecal-v1-0
 
 In addition, instructions to generate the databases from custom catalogues can be found in the [BioSIFTR paper's repository](https://github.com/EBI-Metagenomics/biosiftr_extended_methods?tab=readme-ov-file#31-processing-custom-genome-catalogues).
@@ -94,6 +97,7 @@ This can be any of the MGnify catalogues for which shallow-mapping databases are
 
 | Biome              | Catalogue Version                                                                    |
 | ------------------ | ------------------------------------------------------------------------------------ |
+| barley-rhizosphere | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/barley-rhizosphere-v1-0) |
 | chicken-gut        | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/chicken-gut-v1-0-1)    |
 | cow-rumen          | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/cow-rumen-v1-0-1)      |
 | human-gut          | [v2.0.2 ⚠️](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-gut-v2-0-2)   |
@@ -101,10 +105,12 @@ This can be any of the MGnify catalogues for which shallow-mapping databases are
 | human-vaginal      | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/human-vaginal-v1-0)      |
 | honeybee-gut       | [v1.0.1](https://www.ebi.ac.uk/metagenomics/genome-catalogues/honeybee-gut-v1-0-1)   |
 | marine             | [v2.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/marine-v2-0)             |
+| maize-rhizosphere  | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/maize-rhizosphere-v1-0)  |
 | mouse-gut          | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/mouse-gut-v1-0)          |
 | non-model-fish-gut | [v2.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/non-model-fish-gut-v2-0) |
 | pig-gut            | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/pig-gut-v1-0)            |
 | sheep-rumen        | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/sheep-rumen-v1-0)        |
+| tomato-rhizosphere | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/tomato-rhizosphere-v1-0) |
 | zebrafish-fecal    | [v1.0](https://www.ebi.ac.uk/metagenomics/genome-catalogues/zebrafish-fecal-v1-0)    |
 
 > **⚠️ Note for human-gut**:
