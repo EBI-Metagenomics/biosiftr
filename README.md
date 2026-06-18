@@ -138,6 +138,9 @@ nextflow run ../main.nf \
 
 ## Credits
 
+Biome-specific genome catalogues reveal functional potential of shallow sequencing. Alejandra Escobar-Zepeda, Matti O. Ruuskanen, Martin Beracochea, Jennifer Lu, Dattatray Mongad, Lorna Richardson, Robert D. Finn, Leo Lahti
+bioRxiv 2025.06.16.659887; doi: https://doi.org/10.1101/2025.06.16.659887
+
 ebi-metagenomics/biosiftr pipeline was originally written by @Ales-ibt.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
