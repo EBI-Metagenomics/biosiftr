@@ -82,12 +82,14 @@ The central location for the databases can be set in the config file.
 Optional arguments include:
 
 ```bash
---run_bwa <boolean> default = `false`   # To generate results using bwa-mem2 besides sourmash
---core_mode <boolean> default = `false` # To use core functions instead of pangenome functions
---run_dram <boolean> default = `false`  # To generate DRAM results
+--run_bwa <boolean> default = `false`     # To generate results using bwa-mem2 besides sourmash
+--core_mode <boolean> default = `false`   # To use core functions instead of pangenome functions
+--run_dram <boolean> default = `false`    # To generate DRAM results
+--skip_decont <boolean> default = `false` # To skip host/human decontamination (reads are still quality-trimmed with fastp)
 ```
 
 Use `--core_mode true` for large catalogues like the human-gut to avoid over-prediction due to a large number of accessory genes in the pangenome.
+Use `--skip_decont true` to skip the host, human, and phiX decontamination step; reads are still quality-trimmed with `fastp` before mapping. This is useful when your input has already been decontaminated.
 Nextflow option `-profile` can be used to select a suitable config for your computational resources. You can add profile files to the `config` directory.
 Nextflow option `-resume` can be used to re-run the pipeline from the last successfully finished step.
 

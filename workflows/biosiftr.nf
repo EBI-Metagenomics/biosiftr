@@ -101,52 +101,67 @@ workflow BIOSIFTR {
     }
     ch_reads = Channel.fromSamplesheet("input").map(groupReads) // [ meta, [raw_reads] ]
 
+    /* Download the reference databases (catalogue DBs are needed for mapping
+       regardless of whether decontamination runs) */
+    DOWNLOAD_REFERENCES(params.biome, params.run_bwa)
+
+    // The biome canonical host organism, derived from the biome id (e.g.
+    // cow-rumen-v1-0-1 -> cow). Used by host decontamination and the bwa branch.
+    def host_name = params.biome.split('-')[0]
+
     // ---- PREPROCESSING: Trimming, decontamination, and post-treatment qc ---- //
+    // Quality trimming always runs; only decontamination is skipped with the skip_decont flag
+
     FASTP(ch_reads, [], [], [], [])
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
-    /* Download the reference databases */
-    DOWNLOAD_REFERENCES(params.biome, params.run_bwa)
+    def reads_for_mapping
+    if (!params.skip_decont) {
+        // Creating channel for decontamination with human + phix genomes
+        HUMAN_PHIX_DECONT(FASTP.out.reads, DOWNLOAD_REFERENCES.out.human_phix_index_ch)
 
-    // Creating channel for decontamination with human + phix genomes
-    HUMAN_PHIX_DECONT(FASTP.out.reads, DOWNLOAD_REFERENCES.out.human_phix_index_ch)
+        ch_versions = ch_versions.mix(HUMAN_PHIX_DECONT.out.versions.first())
 
-    ch_versions = ch_versions.mix(HUMAN_PHIX_DECONT.out.versions.first())
+        // Creating channel for decontamination with host when biome != human
 
-    // Creating channel for decontamination with host when biome != human
+        /*****************************************************************/
+        /* DECONTAMINATION using the biome canonical host organism       */
+        /* For example, for cow-rumen-v1.0.1, it will use the cow genome */
+        /* MGnify hosts these genomes on our FTP, and the pipeline will  */
+        /* download them from the FTP server                             */
+        /*****************************************************************/
 
-    /*****************************************************************/
-    /* DECONTAMINATION using the biome canonical host organism       */
-    /* For example, for cow-rumen-v1.0.1, it will use the cow genome */
-    /* MGnify hosts these genomes on our FTP, and the pipeline will  */
-    /* download them from the FTP server                             */
-    /*****************************************************************/
+        def hq_reads
+        if (params.biome.contains('human')) {
+            hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
+        }
+        else {
+            // Custom reference
+            host_ref = Channel.fromPath("${params.decontamination_indexes}/${host_name}.*", checkIfExists: true)
+                .collect()
+                .map { db_files ->
+                    [[id: host_name], db_files]
+                }
 
-    def host_name = params.biome.split('-')[0]
-    if (params.biome.contains('human')) {
-        hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
+            HOST_DECONT(HUMAN_PHIX_DECONT.out.decont_reads, host_ref)
+            hq_reads = HOST_DECONT.out.decont_reads
+            ch_versions = ch_versions.mix(HOST_DECONT.out.versions.first())
+        }
+
+        reads_for_mapping = hq_reads
     }
     else {
-        // Custom reference
-        host_ref = Channel.fromPath("${params.decontamination_indexes}/${host_name}.*", checkIfExists: true)
-            .collect()
-            .map { db_files ->
-                [[id: host_name], db_files]
-            }
-
-        HOST_DECONT(HUMAN_PHIX_DECONT.out.decont_reads, host_ref)
-        hq_reads = HOST_DECONT.out.decont_reads
-        ch_versions = ch_versions.mix(HOST_DECONT.out.versions.first())
+        reads_for_mapping = FASTP.out.reads
     }
 
-    // QC report after decontamination
-    FASTQC_DECONT(hq_reads)
+    // QC report of the reads going into mapping
+    // (post-decontamination, or post-fastp when skip_decont is set)
+    FASTQC_DECONT(reads_for_mapping)
     ch_versions = ch_versions.mix(FASTQC_DECONT.out.versions.first())
-
 
     // ---- MAPPING READS with sourmash: sketch decont reads, mapping, and profiling ---- //
     // Sketching decontaminated reads and running mapping
-    SOURMASH_SKETCH(hq_reads)
+    SOURMASH_SKETCH(reads_for_mapping)
     ch_versions = ch_versions.mix(SOURMASH_SKETCH.out.versions.first())
 
     SOURMASH_GATHER(SOURMASH_SKETCH.out.signatures, DOWNLOAD_REFERENCES.out.biome_sourmash_db, false, false, false, false)
@@ -233,7 +248,7 @@ workflow BIOSIFTR {
                 species_richness_ch
             }
 
-        ALIGN_BWAMEM2(hq_reads.join(species_richness_ch, by: 0), genomes_ref)
+        ALIGN_BWAMEM2(reads_for_mapping.join(species_richness_ch, by: 0), genomes_ref)
 
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
