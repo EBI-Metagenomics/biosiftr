@@ -33,7 +33,7 @@ pre-commit run --all-files
 
 Snapshot tests assert against `tests/default.nf.test.snap`. When output legitimately changes,
 regenerate snapshots with `nf-test test --update-snapshot ...`. `tests/.nftignore` lists paths
-whose *content* is volatile and excluded from content snapshots (only their names are checked).
+whose _content_ is volatile and excluded from content snapshots (only their names are checked).
 
 ## Architecture
 
