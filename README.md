@@ -4,6 +4,10 @@
 
 **ebi-metagenomics/biosiftr** is a bioinformatics pipeline that generates taxonomic and functional profiles for low-yield (shallow shotgun: < 10 M reads) short raw-reads using [`MGnify biome-specific genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) as a reference.
 
+<p align="center" width="100%">
+   <img src="images/visual_abstract_v2.png" width="100%"/>
+</p>
+
 The biome selection includes all the biomes available in the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes).
 
 The main sections of the pipeline include the following steps:
@@ -19,7 +23,7 @@ The main sections of the pipeline include the following steps:
 The final output includes a species relative abundance table, Pfam and KEGG Orthologs (KO) count tables, a KEGG modules completeness table, and DRAM-style visuals (optional). In addition, the shallow-mapping pipeline will integrate the taxonomic and functional tables of all the samples in the input samplesheet.
 
 <p align="center" width="100%">
-   <img src="images/workflow_Apr2025.png" width="90%"/>
+   <img src="images/biosift_decont_opt.png" width="90%"/>
 </p>
 
 ## Installation
