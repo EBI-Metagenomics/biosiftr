@@ -52,7 +52,7 @@ process DRAM_DISTILL {
 
     echo "Line count is "\$line_count
 
-    if [[ \$line_count > 1 ]]; then
+    if [[ \$line_count -gt 1 ]]; then
         DRAM.py \\
             distill \\
             -i dram_input.tsv  \\
@@ -66,7 +66,7 @@ process DRAM_DISTILL {
         done
 
         if [ -f dram_out/product.html ]; then
-            mv "dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html"
+            mv dram_out/product.html ${prefix}_${tool}_${in_type}_dram.html
         fi
 
         mv dram_out/product.tsv ${prefix}_${tool}_${in_type}_dram.tsv
