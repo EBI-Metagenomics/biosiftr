@@ -4,6 +4,10 @@
 
 **ebi-metagenomics/biosiftr** is a bioinformatics pipeline that generates taxonomic and functional profiles for low-yield (shallow shotgun: < 10 M reads) short raw-reads using [`MGnify biome-specific genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes) as a reference.
 
+<p align="center" width="100%">
+   <img src="images/visual_abstract_v2.png" width="100%"/>
+</p>
+
 The biome selection includes all the biomes available in the [`MGnify genome catalogues`](https://www.ebi.ac.uk/metagenomics/browse/genomes).
 
 The main sections of the pipeline include the following steps:
@@ -19,7 +23,7 @@ The main sections of the pipeline include the following steps:
 The final output includes a species relative abundance table, Pfam and KEGG Orthologs (KO) count tables, a KEGG modules completeness table, and DRAM-style visuals (optional). In addition, the shallow-mapping pipeline will integrate the taxonomic and functional tables of all the samples in the input samplesheet.
 
 <p align="center" width="100%">
-   <img src="images/workflow_Apr2025.png" width="90%"/>
+   <img src="images/biosift_decont_opt.png" width="90%"/>
 </p>
 
 ## Installation
@@ -82,12 +86,14 @@ The central location for the databases can be set in the config file.
 Optional arguments include:
 
 ```bash
---run_bwa <boolean> default = `false`   # To generate results using bwa-mem2 besides sourmash
---core_mode <boolean> default = `false` # To use core functions instead of pangenome functions
---run_dram <boolean> default = `false`  # To generate DRAM results
+--run_bwa <boolean> default = `false`     # To generate results using bwa-mem2 besides sourmash
+--core_mode <boolean> default = `false`   # To use core functions instead of pangenome functions
+--run_dram <boolean> default = `false`    # To generate DRAM results
+--skip_decont <boolean> default = `false` # To skip host/human decontamination (reads are still quality-trimmed with fastp)
 ```
 
 Use `--core_mode true` for large catalogues like the human-gut to avoid over-prediction due to a large number of accessory genes in the pangenome.
+Use `--skip_decont true` to skip the host, human, and phiX decontamination step; reads are still quality-trimmed with `fastp` before mapping. This is useful when your input has already been decontaminated.
 Nextflow option `-profile` can be used to select a suitable config for your computational resources. You can add profile files to the `config` directory.
 Nextflow option `-resume` can be used to re-run the pipeline from the last successfully finished step.
 
@@ -131,6 +137,9 @@ nextflow run ../main.nf \
 ```
 
 ## Credits
+
+Biome-specific genome catalogues reveal functional potential of shallow sequencing. Alejandra Escobar-Zepeda, Matti O. Ruuskanen, Martin Beracochea, Jennifer Lu, Dattatray Mongad, Lorna Richardson, Robert D. Finn, Leo Lahti
+bioRxiv 2025.06.16.659887; doi: https://doi.org/10.1101/2025.06.16.659887
 
 ebi-metagenomics/biosiftr pipeline was originally written by @Ales-ibt.
 
