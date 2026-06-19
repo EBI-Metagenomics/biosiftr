@@ -38,7 +38,6 @@ process KEGG_SPECIES {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_${tool}_species_kegg_modules_comp.tsv

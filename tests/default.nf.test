@@ -7,6 +7,8 @@ nextflow_pipeline {
 
 
     test("bioSIFTR running on single-end and paired-end reads. Biome human-vaginal-v1-0 default params") {
+        tag "default"
+
         when {
             params {
                 outdir = "$outputDir"
@@ -40,6 +42,8 @@ nextflow_pipeline {
     }
 
     test("bioSIFTR running on single-end and paired-end reads. Biome human-vaginal-v1-0 with bwa, core, and dram options") {
+        tag "bwa_core_dram"
+
         when {
             params {
                 outdir = "$outputDir"
@@ -54,6 +58,42 @@ nextflow_pipeline {
                 params.outdir, 
                 relative: true, 
                 includeDir: true, 
+                ignore: [
+                    'pipeline_info/*'
+                ]
+            )
+            // stable_path: All files in ${params.outdir}/ with stable content
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(
+                    // Number of tasks
+                    workflow.trace.succeeded().size(),
+                    // All stable path name
+                    stable_name,
+                    // All files with stable contents
+                    stable_path,
+                ).match() }
+            )
+        }
+    }
+
+    test("bioSIFTR running on single-end and paired-end reads. Biome human-vaginal-v1-0 with skip_decont") {
+        tag "skip_decont"
+
+        when {
+            params {
+                outdir = "$outputDir"
+                skip_decont = true
+            }
+        }
+
+        then {
+            // stable_name: All files + folders in ${params.outdir}/ with a stable name
+            def stable_name = getAllFilesFromDir(
+                params.outdir,
+                relative: true,
+                includeDir: true,
                 ignore: [
                     'pipeline_info/*'
                 ]

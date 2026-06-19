@@ -79,19 +79,19 @@ workflow BIOSIFTR {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-    ch_multiqc_config = Channel.fromPath("${projectDir}/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
-    ch_multiqc_logo = params.multiqc_logo ? Channel.fromPath(params.multiqc_logo, checkIfExists: true) : Channel.empty()
+    ch_multiqc_config = channel.fromPath("${projectDir}/assets/multiqc_config.yml", checkIfExists: true)
+    ch_multiqc_custom_config = params.multiqc_config ? channel.fromPath(params.multiqc_config, checkIfExists: true) : channel.empty()
+    ch_multiqc_logo = params.multiqc_logo ? channel.fromPath(params.multiqc_logo, checkIfExists: true) : channel.empty()
     ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true)
 
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
+    ch_versions = channel.empty()
+    ch_multiqc_files = channel.empty()
 
 
     // ---- Combine data into the reads channel ---- //
     groupReads = { list ->
         def meta = [id: list[0]]
-        def reads = list.drop(1).findAll { it.size() > 0 }
+        def reads = list.drop(1).findAll { read -> read.size() > 0 }
         if (reads.size() == 1) {
             return tuple(meta + [single_end: true], reads)
         }
@@ -99,54 +99,70 @@ workflow BIOSIFTR {
             return tuple(meta + [single_end: false], reads)
         }
     }
-    ch_reads = Channel.fromSamplesheet("input").map(groupReads) // [ meta, [raw_reads] ]
+    ch_reads = channel.fromSamplesheet("input").map(groupReads) // [ meta, [raw_reads] ]
+
+    /* Download the reference databases (catalogue DBs are needed for mapping
+       regardless of whether decontamination runs) */
+    DOWNLOAD_REFERENCES(params.biome, params.run_bwa)
+
+    // The biome canonical host organism, derived from the biome id (e.g.
+    // cow-rumen-v1-0-1 -> cow). Used by host decontamination and the bwa branch.
+    def host_name = params.biome.split('-')[0]
 
     // ---- PREPROCESSING: Trimming, decontamination, and post-treatment qc ---- //
+    // Quality trimming always runs; only decontamination is skipped with the skip_decont flag
+
     FASTP(ch_reads, [], [], [], [])
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
-    /* Download the reference databases */
-    DOWNLOAD_REFERENCES(params.biome, params.run_bwa)
+    def reads_for_mapping
+    if (!params.skip_decont) {
+        // Creating channel for decontamination with human + phix genomes
+        HUMAN_PHIX_DECONT(FASTP.out.reads, DOWNLOAD_REFERENCES.out.human_phix_index_ch)
 
-    // Creating channel for decontamination with human + phix genomes
-    HUMAN_PHIX_DECONT(FASTP.out.reads, DOWNLOAD_REFERENCES.out.human_phix_index_ch)
+        ch_versions = ch_versions.mix(HUMAN_PHIX_DECONT.out.versions.first())
 
-    ch_versions = ch_versions.mix(HUMAN_PHIX_DECONT.out.versions.first())
+        // Creating channel for decontamination with host when biome != human
 
-    // Creating channel for decontamination with host when biome != human
+        /*****************************************************************/
+        /* DECONTAMINATION using the biome canonical host organism       */
+        /* For example, for cow-rumen-v1.0.1, it will use the cow genome */
+        /* MGnify hosts these genomes on our FTP, and the pipeline will  */
+        /* download them from the FTP server                             */
+        /*****************************************************************/
 
-    /*****************************************************************/
-    /* DECONTAMINATION using the biome canonical host organism       */
-    /* For example, for cow-rumen-v1.0.1, it will use the cow genome */
-    /* MGnify hosts these genomes on our FTP, and the pipeline will  */
-    /* download them from the FTP server                             */
-    /*****************************************************************/
+        def hq_reads
+        if (params.biome.contains('human')) {
+            hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
+        }
+        else {
+            // Custom reference
+            host_ref = channel.fromPath("${params.decontamination_indexes}/${host_name}.*", checkIfExists: true)
+                .collect()
+                .map { db_files ->
+                    [[id: host_name], db_files]
+                }
 
-    def host_name = params.biome.split('-')[0]
-    if (params.biome.contains('human')) {
-        hq_reads = HUMAN_PHIX_DECONT.out.decont_reads
+            HOST_DECONT(HUMAN_PHIX_DECONT.out.decont_reads, host_ref)
+            hq_reads = HOST_DECONT.out.decont_reads
+            ch_versions = ch_versions.mix(HOST_DECONT.out.versions.first())
+        }
+
+        reads_for_mapping = hq_reads
     }
     else {
-        // Custom reference
-        host_ref = Channel.fromPath("${params.decontamination_indexes}/${host_name}.*", checkIfExists: true)
-            .collect()
-            .map { db_files ->
-                [[id: host_name], db_files]
-            }
-
-        HOST_DECONT(HUMAN_PHIX_DECONT.out.decont_reads, host_ref)
-        hq_reads = HOST_DECONT.out.decont_reads
-        ch_versions = ch_versions.mix(HOST_DECONT.out.versions.first())
+        reads_for_mapping = FASTP.out.reads
     }
 
-    // QC report after decontamination
-    FASTQC_DECONT(hq_reads)
-    ch_versions = ch_versions.mix(FASTQC_DECONT.out.versions.first())
-
+    // QC report of the reads going into mapping
+    // (post-decontamination, or post-fastp when skip_decont is set)
+    // NOTE: FASTQC reports its version via the `versions` channel topic (collected below),
+    // not a versions.yml `emit`, so there is no ch_versions.mix here.
+    FASTQC_DECONT(reads_for_mapping)
 
     // ---- MAPPING READS with sourmash: sketch decont reads, mapping, and profiling ---- //
     // Sketching decontaminated reads and running mapping
-    SOURMASH_SKETCH(hq_reads)
+    SOURMASH_SKETCH(reads_for_mapping)
     ch_versions = ch_versions.mix(SOURMASH_SKETCH.out.versions.first())
 
     SOURMASH_GATHER(SOURMASH_SKETCH.out.signatures, DOWNLOAD_REFERENCES.out.biome_sourmash_db, false, false, false, false)
@@ -180,7 +196,7 @@ workflow BIOSIFTR {
         )
         ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
 
-        ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
+        ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { meta_file -> meta_file[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
         DRAM_DISTILL(
             ch_dram_community,
             file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
@@ -194,16 +210,16 @@ workflow BIOSIFTR {
     ch_versions = ch_versions.mix(SM_COMM_KC.out.versions.first())
 
     // ---- ANNOT INTEGRATOR: All samples matrices for taxo, kos, pfams, dram, and modules completeness ---- //
-    INTEGRA_TAXO(POSTPROC_SOURMASHTAXO.out.sm_taxo.collect { it[1] }, 'sm_taxo')
+    INTEGRA_TAXO(POSTPROC_SOURMASHTAXO.out.sm_taxo.collect { meta_file -> meta_file[1] }, 'sm_taxo')
     ch_versions = ch_versions.mix(INTEGRA_TAXO.out.versions.first())
 
-    INTEGRA_KO(SM_FUNC.out.kegg_comm.collect { it[1] }, 'sm_kos')
+    INTEGRA_KO(SM_FUNC.out.kegg_comm.collect { meta_file -> meta_file[1] }, 'sm_kos')
     ch_versions = ch_versions.mix(INTEGRA_KO.out.versions.first())
 
-    INTEGRA_PFAM(SM_FUNC.out.pfam_comm.collect { it[1] }, 'sm_pfam')
+    INTEGRA_PFAM(SM_FUNC.out.pfam_comm.collect { meta_file -> meta_file[1] }, 'sm_pfam')
     ch_versions = ch_versions.mix(INTEGRA_PFAM.out.versions.first())
 
-    INTEGRA_MODU(SM_COMM_KC.out.kegg_comp.collect { it[1] }, 'sm_modules')
+    INTEGRA_MODU(SM_COMM_KC.out.kegg_comp.collect { meta_file -> meta_file[1] }, 'sm_modules')
     ch_versions = ch_versions.mix(INTEGRA_MODU.out.versions.first())
 
 
@@ -233,7 +249,7 @@ workflow BIOSIFTR {
                 species_richness_ch
             }
 
-        ALIGN_BWAMEM2(hq_reads.join(species_richness_ch, by: 0), genomes_ref)
+        ALIGN_BWAMEM2(reads_for_mapping.join(species_richness_ch, by: 0), genomes_ref)
 
         ch_versions = ch_versions.mix(ALIGN_BWAMEM2.out.versions.first())
 
@@ -264,7 +280,7 @@ workflow BIOSIFTR {
             )
             ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
 
-            ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
+            ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { meta_file -> meta_file[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
             BWA_INT_DRAM(
                 ch_bwa_dram_community,
                 file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
@@ -278,35 +294,45 @@ workflow BIOSIFTR {
         ch_versions = ch_versions.mix(BWA_COMM_KC.out.versions.first())
 
         // ---- ANNOT INTEGRATOR: Matrices for taxo, kos, pfams, dram, and modules completeness ---- //
-        BWA_INT_TAXO(POSTPROC_BWATAXO.out.bwa_taxo.collect { it[1] }, 'bwa_taxo')
+        BWA_INT_TAXO(POSTPROC_BWATAXO.out.bwa_taxo.collect { meta_file -> meta_file[1] }, 'bwa_taxo')
         ch_versions = ch_versions.mix(BWA_INT_TAXO.out.versions.first())
 
-        BWA_INT_KO(BWA_FUNC.out.kegg_comm.collect { it[1] }, 'bwa_kos')
+        BWA_INT_KO(BWA_FUNC.out.kegg_comm.collect { meta_file -> meta_file[1] }, 'bwa_kos')
         ch_versions = ch_versions.mix(BWA_INT_KO.out.versions.first())
 
-        BWA_INT_PFAM(BWA_FUNC.out.pfam_comm.collect { it[1] }, 'bwa_pfam')
+        BWA_INT_PFAM(BWA_FUNC.out.pfam_comm.collect { meta_file -> meta_file[1] }, 'bwa_pfam')
         ch_versions = ch_versions.mix(BWA_INT_PFAM.out.versions.first())
 
-        BWA_INT_MODU(BWA_COMM_KC.out.kegg_comp.collect { it[1] }, 'bwa_modules')
+        BWA_INT_MODU(BWA_COMM_KC.out.kegg_comp.collect { meta_file -> meta_file[1] }, 'bwa_modules')
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
     }
 
     // ---- Multiqc report ---- //
+    // Bridge tools that report versions via the `versions` channel topic (e.g. fastqc) into the
+    // existing versions.yml flow: format each (process, tool, version) tuple as a versions.yml
+    // fragment and mix it into ch_versions so CUSTOM_DUMPSOFTWAREVERSIONS collates it as before.
+    ch_versions = ch_versions.mix(
+        channel.topic('versions')
+            .distinct()
+            .map { process, tool, version -> "\"${process}\":\n  ${tool}: ${version}" }
+            .collectFile(name: 'topic_versions.yml', newLine: true)
+    )
+
     CUSTOM_DUMPSOFTWAREVERSIONS(
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
 
     workflow_summary = WorkflowBiosiftr.paramsSummaryMultiqc(workflow, summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+    ch_workflow_summary = channel.value(workflow_summary)
 
     methods_description = WorkflowBiosiftr.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    ch_methods_description = Channel.value(methods_description)
+    ch_methods_description = channel.value(methods_description)
 
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect { it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_DECONT.out.zip.collect { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect { meta_file -> meta_file[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_DECONT.out.zip.collect { meta_file -> meta_file[1] }.ifEmpty([]))
 
     MULTIQC(
         ch_multiqc_files.collect(),

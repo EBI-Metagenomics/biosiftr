@@ -35,7 +35,6 @@ process POSTPROC_SOURMASHTAXO {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_sm_species.tsv
