@@ -44,18 +44,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Pin to the 3.x line: nf-core/tools 4.0 moved pipeline commands under
-          # `nf-core pipelines ...` (so `nf-core lint` -> `nf-core pipelines lint`)
-          # and brought new/stricter lint rules. Stay on 3.x until a deliberate
-          # nf-core 4.x template upgrade.
-          pip install 'nf-core<4'
+          # Pin to a known 3.x: nf-core/tools 4.0 moved pipeline commands under
+          # `nf-core pipelines ...` and brought new/stricter lint rules. Stay on
+          # 3.x until a deliberate nf-core 4.x template upgrade. (3.5.2's deprecated
+          # `nf-core lint` alias is broken, so the `pipelines lint` form is used below.)
+          pip install 'nf-core==3.5.2'
 
       - name: Run nf-core lint
         env:
           GITHUB_COMMENTS_URL: ${{ github.event.pull_request.comments_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PR_COMMIT: ${{ github.event.pull_request.head.sha }}
-        run: nf-core -l lint_log.txt lint --dir ${GITHUB_WORKSPACE} --markdown lint_results.md
+        run: nf-core -l lint_log.txt pipelines lint --dir ${GITHUB_WORKSPACE} --markdown lint_results.md
 
       - name: Save PR number
         if: ${{ always() }}
