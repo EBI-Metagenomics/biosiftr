@@ -44,11 +44,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Pin to a known 3.x: nf-core/tools 4.0 moved pipeline commands under
-          # `nf-core pipelines ...` and brought new/stricter lint rules. Stay on
-          # 3.x until a deliberate nf-core 4.x template upgrade. (3.5.2's deprecated
-          # `nf-core lint` alias is broken, so the `pipelines lint` form is used below.)
-          pip install 'nf-core==3.5.2'
+          # Pinned to a specific nf-core/tools dev commit (the 3.6.0.dev0 the pipeline is
+          # maintained with). Released versions don't lint this repo cleanly: 3.5.2 wrongly
+          # recreates modules.json and prompts for our custom EBI module repo (fails in CI),
+          # and 4.0.2 crashes in its new `nextflow inspect` container-config check. This dev
+          # commit lints clean; revisit when a 4.x release handles custom-repo pipelines.
+          pip install "nf-core @ git+https://github.com/nf-core/tools.git@a70e6f2341cf0b17a2698dedba8e9cc8d2e5f0e6"
 
       - name: Run nf-core lint
         env:
