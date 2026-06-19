@@ -156,8 +156,9 @@ workflow BIOSIFTR {
 
     // QC report of the reads going into mapping
     // (post-decontamination, or post-fastp when skip_decont is set)
+    // NOTE: FASTQC reports its version via the `versions` channel topic (collected below),
+    // not a versions.yml `emit`, so there is no ch_versions.mix here.
     FASTQC_DECONT(reads_for_mapping)
-    ch_versions = ch_versions.mix(FASTQC_DECONT.out.versions.first())
 
     // ---- MAPPING READS with sourmash: sketch decont reads, mapping, and profiling ---- //
     // Sketching decontaminated reads and running mapping
@@ -307,6 +308,16 @@ workflow BIOSIFTR {
     }
 
     // ---- Multiqc report ---- //
+    // Bridge tools that report versions via the `versions` channel topic (e.g. fastqc) into the
+    // existing versions.yml flow: format each (process, tool, version) tuple as a versions.yml
+    // fragment and mix it into ch_versions so CUSTOM_DUMPSOFTWAREVERSIONS collates it as before.
+    ch_versions = ch_versions.mix(
+        channel.topic('versions')
+            .distinct()
+            .map { process, tool, version -> "\"${process}\":\n  ${tool}: ${version}" }
+            .collectFile(name: 'topic_versions.yml', newLine: true)
+    )
+
     CUSTOM_DUMPSOFTWAREVERSIONS(
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
