@@ -79,19 +79,19 @@ workflow BIOSIFTR {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-    ch_multiqc_config = Channel.fromPath("${projectDir}/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
-    ch_multiqc_logo = params.multiqc_logo ? Channel.fromPath(params.multiqc_logo, checkIfExists: true) : Channel.empty()
+    ch_multiqc_config = channel.fromPath("${projectDir}/assets/multiqc_config.yml", checkIfExists: true)
+    ch_multiqc_custom_config = params.multiqc_config ? channel.fromPath(params.multiqc_config, checkIfExists: true) : channel.empty()
+    ch_multiqc_logo = params.multiqc_logo ? channel.fromPath(params.multiqc_logo, checkIfExists: true) : channel.empty()
     ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true)
 
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
+    ch_versions = channel.empty()
+    ch_multiqc_files = channel.empty()
 
 
     // ---- Combine data into the reads channel ---- //
     groupReads = { list ->
         def meta = [id: list[0]]
-        def reads = list.drop(1).findAll { it.size() > 0 }
+        def reads = list.drop(1).findAll { read -> read.size() > 0 }
         if (reads.size() == 1) {
             return tuple(meta + [single_end: true], reads)
         }
@@ -99,7 +99,7 @@ workflow BIOSIFTR {
             return tuple(meta + [single_end: false], reads)
         }
     }
-    ch_reads = Channel.fromSamplesheet("input").map(groupReads) // [ meta, [raw_reads] ]
+    ch_reads = channel.fromSamplesheet("input").map(groupReads) // [ meta, [raw_reads] ]
 
     /* Download the reference databases (catalogue DBs are needed for mapping
        regardless of whether decontamination runs) */
@@ -137,7 +137,7 @@ workflow BIOSIFTR {
         }
         else {
             // Custom reference
-            host_ref = Channel.fromPath("${params.decontamination_indexes}/${host_name}.*", checkIfExists: true)
+            host_ref = channel.fromPath("${params.decontamination_indexes}/${host_name}.*", checkIfExists: true)
                 .collect()
                 .map { db_files ->
                     [[id: host_name], db_files]
@@ -195,7 +195,7 @@ workflow BIOSIFTR {
         )
         ch_versions = ch_versions.mix(SM_DRAM.out.versions.first())
 
-        ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
+        ch_dram_community = SM_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { meta_file -> meta_file[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
         DRAM_DISTILL(
             ch_dram_community,
             file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
@@ -209,16 +209,16 @@ workflow BIOSIFTR {
     ch_versions = ch_versions.mix(SM_COMM_KC.out.versions.first())
 
     // ---- ANNOT INTEGRATOR: All samples matrices for taxo, kos, pfams, dram, and modules completeness ---- //
-    INTEGRA_TAXO(POSTPROC_SOURMASHTAXO.out.sm_taxo.collect { it[1] }, 'sm_taxo')
+    INTEGRA_TAXO(POSTPROC_SOURMASHTAXO.out.sm_taxo.collect { meta_file -> meta_file[1] }, 'sm_taxo')
     ch_versions = ch_versions.mix(INTEGRA_TAXO.out.versions.first())
 
-    INTEGRA_KO(SM_FUNC.out.kegg_comm.collect { it[1] }, 'sm_kos')
+    INTEGRA_KO(SM_FUNC.out.kegg_comm.collect { meta_file -> meta_file[1] }, 'sm_kos')
     ch_versions = ch_versions.mix(INTEGRA_KO.out.versions.first())
 
-    INTEGRA_PFAM(SM_FUNC.out.pfam_comm.collect { it[1] }, 'sm_pfam')
+    INTEGRA_PFAM(SM_FUNC.out.pfam_comm.collect { meta_file -> meta_file[1] }, 'sm_pfam')
     ch_versions = ch_versions.mix(INTEGRA_PFAM.out.versions.first())
 
-    INTEGRA_MODU(SM_COMM_KC.out.kegg_comp.collect { it[1] }, 'sm_modules')
+    INTEGRA_MODU(SM_COMM_KC.out.kegg_comp.collect { meta_file -> meta_file[1] }, 'sm_modules')
     ch_versions = ch_versions.mix(INTEGRA_MODU.out.versions.first())
 
 
@@ -279,7 +279,7 @@ workflow BIOSIFTR {
             )
             ch_versions = ch_versions.mix(BWA_DRAM.out.versions.first())
 
-            ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { it[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
+            ch_bwa_dram_community = BWA_FUNC.out.dram_comm.collectFile(name: 'dram_community.tsv', newLine: true) { meta_file -> meta_file[1] }.map { dram_summary -> [[id: 'integrated'], dram_summary] }
             BWA_INT_DRAM(
                 ch_bwa_dram_community,
                 file("${params.reference_dbs}/dram_dbs", checkIfExists: true),
@@ -293,16 +293,16 @@ workflow BIOSIFTR {
         ch_versions = ch_versions.mix(BWA_COMM_KC.out.versions.first())
 
         // ---- ANNOT INTEGRATOR: Matrices for taxo, kos, pfams, dram, and modules completeness ---- //
-        BWA_INT_TAXO(POSTPROC_BWATAXO.out.bwa_taxo.collect { it[1] }, 'bwa_taxo')
+        BWA_INT_TAXO(POSTPROC_BWATAXO.out.bwa_taxo.collect { meta_file -> meta_file[1] }, 'bwa_taxo')
         ch_versions = ch_versions.mix(BWA_INT_TAXO.out.versions.first())
 
-        BWA_INT_KO(BWA_FUNC.out.kegg_comm.collect { it[1] }, 'bwa_kos')
+        BWA_INT_KO(BWA_FUNC.out.kegg_comm.collect { meta_file -> meta_file[1] }, 'bwa_kos')
         ch_versions = ch_versions.mix(BWA_INT_KO.out.versions.first())
 
-        BWA_INT_PFAM(BWA_FUNC.out.pfam_comm.collect { it[1] }, 'bwa_pfam')
+        BWA_INT_PFAM(BWA_FUNC.out.pfam_comm.collect { meta_file -> meta_file[1] }, 'bwa_pfam')
         ch_versions = ch_versions.mix(BWA_INT_PFAM.out.versions.first())
 
-        BWA_INT_MODU(BWA_COMM_KC.out.kegg_comp.collect { it[1] }, 'bwa_modules')
+        BWA_INT_MODU(BWA_COMM_KC.out.kegg_comp.collect { meta_file -> meta_file[1] }, 'bwa_modules')
         ch_versions = ch_versions.mix(BWA_INT_MODU.out.versions.first())
     }
 
@@ -312,16 +312,16 @@ workflow BIOSIFTR {
     )
 
     workflow_summary = WorkflowBiosiftr.paramsSummaryMultiqc(workflow, summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+    ch_workflow_summary = channel.value(workflow_summary)
 
     methods_description = WorkflowBiosiftr.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    ch_methods_description = Channel.value(methods_description)
+    ch_methods_description = channel.value(methods_description)
 
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect { it[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_DECONT.out.zip.collect { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect { meta_file -> meta_file[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_DECONT.out.zip.collect { meta_file -> meta_file[1] }.ifEmpty([]))
 
     MULTIQC(
         ch_multiqc_files.collect(),

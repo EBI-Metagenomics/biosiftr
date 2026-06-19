@@ -81,7 +81,6 @@ process DRAM_DISTILL {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def VERSION = '1.3.5'
     """

@@ -47,7 +47,6 @@ process POSTPROC_FUNCTIONSPRED {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${tool}_${prefix}_community_kegg.tsv

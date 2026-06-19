@@ -32,7 +32,6 @@ process POSTPROC_INTEGRATOR {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     """
     touch ${annot_type}_matrix.tsv
 

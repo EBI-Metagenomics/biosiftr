@@ -9,13 +9,13 @@ workflow DOWNLOAD_REFERENCES {
 
 
     main:
-    dram_dbs = Channel.empty()
-    biome_sourmash_db = Channel.empty()
-    biome_genomes_metadata = Channel.empty()
-    biome_bwa_db = Channel.empty()
-    biome_pangenome_functional_anns_db = Channel.empty()
-    biome_kegg_completeness_db = Channel.empty()
-    human_phix_index = Channel.empty()
+    dram_dbs = channel.empty()
+    biome_sourmash_db = channel.empty()
+    biome_genomes_metadata = channel.empty()
+    biome_bwa_db = channel.empty()
+    biome_pangenome_functional_anns_db = channel.empty()
+    biome_kegg_completeness_db = channel.empty()
+    human_phix_index = channel.empty()
 
     dram_dbs_dir = file("${params.reference_dbs}/dram_dbs")
 
@@ -50,7 +50,7 @@ workflow DOWNLOAD_REFERENCES {
         biome_genomes_metadata = biome_genomes_metadata_file
         biome_pangenome_functional_anns_db = biome_pangenome_functional_anns_db_dir
         biome_kegg_completeness_db = biome_kegg_completeness_db_dir
-        biome_bwa_db = bwamem2_mode ? biome_bwa_db_files.collect() : Channel.empty()
+        biome_bwa_db = bwamem2_mode ? biome_bwa_db_files.collect() : channel.empty()
     } else {
         println "Pre-computed genomes databases NOT found. Running sbwf to download DBs"
         DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS(biome, bwamem2_mode)
@@ -58,13 +58,8 @@ workflow DOWNLOAD_REFERENCES {
         biome_genomes_metadata = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.genomes_metadata_tsv.first()
         biome_pangenome_functional_anns_db = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.pangenome_functional_anns_db.first()
         biome_kegg_completeness_db = DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.kegg_completeness_db.first()
-        biome_bwa_db = bwamem2_mode ? DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.bwamem2_index.collect() : Channel.empty()
+        biome_bwa_db = bwamem2_mode ? DOWNLOAD_MGNIFY_GENOMES_REFERENCE_DBS.out.bwamem2_index.collect() : channel.empty()
     }
-
-    human_phix_index_ch = human_phix_index.collect()
-        .map { db_files ->
-            [[id: "human_phix"], db_files]
-        }
 
     emit:
     dram_dbs
@@ -73,5 +68,5 @@ workflow DOWNLOAD_REFERENCES {
     biome_bwa_db
     biome_pangenome_functional_anns_db
     biome_kegg_completeness_db
-    human_phix_index_ch
+    human_phix_index_ch = human_phix_index.collect().map { db_files -> [[id: "human_phix"], db_files] }
 }
