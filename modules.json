@@ -28,9 +28,8 @@
                     },
                     "fastqc": {
                         "branch": "master",
-                        "git_sha": "bd8092b67b5103bdd52e300f75889442275c3117",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": ["modules"],
-                        "patch": "modules/nf-core/fastqc/fastqc.diff"
                     },
                     "multiqc": {
                         "branch": "master",
