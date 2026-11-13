@@ -130,15 +130,6 @@ def split_cell(cell: str) -> list[str]:
     return [tag for tag in cell.replace("\t", ";").split(";") if tag]
 
 
-def genome_of(locus_tag: str) -> str:
-    """Get the genome accession of a Prokka locus tag (``<genome>_<number>``).
-
-    :param locus_tag: The locus tag.
-    :return: The genome accession.
-    """
-    return locus_tag.rsplit("_", 1)[0]
-
-
 def find_duplicates(names: list[str]) -> dict[str, list[int]]:
     """Find the names that occur more than one time.
 
@@ -231,6 +222,7 @@ def extract_cds(gff: Path, wanted: dict[str, set[int]]) -> dict[str, str]:
 
 
 def pair_duplicate_records(
+    genomes: list[str],
     rows: list[list[str]],
     records: list[tuple[str, str]],
     duplicates: dict[str, list[int]],
@@ -242,6 +234,8 @@ def pair_duplicate_records(
     representative is a member of the cluster. So a record belongs to the row that has a
     member CDS equal to the record sequence.
 
+    :param genomes: The genome columns of the CSV. They give the GFF file names, because
+        the locus tags of a versioned genome (``MGYG000000761.1``) can have no version.
     :param rows: The CSV rows.
     :param records: The FASTA records, in file order.
     :param duplicates: Output of :func:`find_duplicates` for the CSV names.
@@ -250,17 +244,13 @@ def pair_duplicate_records(
     :raises PangenomeFixError: If a record does not match exactly one row, or a GFF is missing.
     """
     record_positions = find_duplicates([name for name, _ in records])
-    wanted = defaultdict(set)  # locus tag -> allowed lengths
+    by_genome = defaultdict(lambda: defaultdict(set))  # genome -> locus tag -> allowed lengths
     for name, row_indexes in duplicates.items():
         lengths = {len(records[i][1]) for i in record_positions.get(name, [])}
         for row_index in row_indexes:
-            for cell in rows[row_index][CSV_META_COLUMNS:]:
+            for genome, cell in zip(genomes, rows[row_index][CSV_META_COLUMNS:]):
                 for locus_tag in split_cell(cell):
-                    wanted[locus_tag] |= lengths
-
-    by_genome = defaultdict(dict)
-    for locus_tag, lengths in wanted.items():
-        by_genome[genome_of(locus_tag)][locus_tag] = lengths
+                    by_genome[genome][locus_tag] |= lengths
 
     member_sequences = {}
     for genome in sorted(by_genome):
@@ -373,7 +363,7 @@ def fix_pangenome(pangenome_dir: Path, gff_dir: Path, species: str, outdir: Path
         )
 
     new_names = new_names_for_duplicates(rows, duplicates)
-    pairs = pair_duplicate_records(rows, records, duplicates, gff_dir)
+    pairs = pair_duplicate_records(header[CSV_META_COLUMNS:], rows, records, duplicates, gff_dir)
 
     renames = []
     for index, new_name in sorted(new_names.items()):

@@ -16,12 +16,12 @@
                 "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301/pan-genome/pan-genome.fna.gz",
                 "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301/pan-genome/renamed_genes.tsv",
                 "test-host-v1-0/functional_profiles_DB",
-                "test-host-v1-0/functional_profiles_DB/MGYG000000101_clstr.tsv",
+                "test-host-v1-0/functional_profiles_DB/MGYG000000101.1_clstr.tsv",
                 "test-host-v1-0/functional_profiles_DB/MGYG000000201_clstr.tsv",
                 "test-host-v1-0/functional_profiles_DB/MGYG000000301_clstr.tsv",
                 "test-host-v1-0/genomes-all_metadata.tsv",
                 "test-host-v1-0/kegg_completeness_DB",
-                "test-host-v1-0/kegg_completeness_DB/MGYG000000101_clstr_kegg_comp.tsv",
+                "test-host-v1-0/kegg_completeness_DB/MGYG000000101.1_clstr_kegg_comp.tsv",
                 "test-host-v1-0/kegg_completeness_DB/MGYG000000201_clstr_kegg_comp.tsv",
                 "test-host-v1-0/kegg_completeness_DB/MGYG000000301_clstr_kegg_comp.tsv",
                 "test-host-v1-0/pangenome_check_report.tsv",
@@ -43,17 +43,17 @@
                 "gene_prevalence_corrected.txt.gz:md5,7e27232174b1ac0732dd3887766ac62e",
                 "pan-genome.fna.gz:md5,5ad8c4c159eb009c38c8c10b9a93a32a",
                 "renamed_genes.tsv:md5,80618f19bec2d8213c372f76d499efc8",
-                "MGYG000000101_clstr.tsv:md5,cfd02653ef39fb34db6b30aeb54c98e6",
+                "MGYG000000101.1_clstr.tsv:md5,754537e81dee101309e66c6c11f8a0d7",
                 "MGYG000000201_clstr.tsv:md5,f735abd7329c4e8dda05f029a70d4b5b",
                 "MGYG000000301_clstr.tsv:md5,ea47e0729743975a27208bc5e3c8b339",
-                "genomes-all_metadata.tsv:md5,1f1624108f78a5331eb1a3f5d2f24218",
-                "MGYG000000101_clstr_kegg_comp.tsv:md5,fb2c2c6f7db871d877daaed26730cce6",
+                "genomes-all_metadata.tsv:md5,90b3ebe4c6d637dcaede0af635887706",
+                "MGYG000000101.1_clstr_kegg_comp.tsv:md5,fb2c2c6f7db871d877daaed26730cce6",
                 "MGYG000000201_clstr_kegg_comp.tsv:md5,fb2c2c6f7db871d877daaed26730cce6",
                 "MGYG000000301_clstr_kegg_comp.tsv:md5,e0058447320731997756489034edf31a",
                 "pangenome_check_report.tsv:md5,17235a702acf2f52fb69332d24a555fe",
                 "bwa_reps.fna.0123:md5,8220c8779d12024e44dc9968ba5f4f46",
                 "bwa_reps.fna.amb:md5,01f6cface1aa71cc7ca67fc19744be12",
-                "bwa_reps.fna.ann:md5,76e5551338ff8f9cb5988ea92d29a339",
+                "bwa_reps.fna.ann:md5,04b6af40002f3802a99b89912b83dabc",
                 "bwa_reps.fna.bwt.2bit.64:md5,d6aaf495d8dfd03030fb85d8b75b7e6e",
                 "bwa_reps.fna.pac:md5,a0c98e42039ee8c95dab39315e9a4be4"
             ]
@@ -62,6 +62,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.04.7"
         },
-        "timestamp": "2026-11-13T09:57:07.576216"
+        "timestamp": "2026-11-13T12:33:33.765483"
     }
 }

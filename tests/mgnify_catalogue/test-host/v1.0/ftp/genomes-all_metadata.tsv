@@ -1,5 +1,5 @@
 Genome	Genome_type	Length	N_contigs	N50	GC_content	Completeness	Contamination	rRNA_5S	rRNA_16S	rRNA_23S	tRNAs	Genome_accession	Species_rep	Lineage	Sample_accession	Study_accession	Country	Continent	FTP_download
-MGYG000000101	MAG	1000	1	1000	50	95	0.5	0	0	0	20	MGYG000000101	MGYG000000101	d__Bacteria;p__;c__;o__;f__;g__;s__	SAMN0	PRJN0	UK	Europe	-
+MGYG000000101.1	MAG	1000	1	1000	50	95	0.5	0	0	0	20	MGYG000000101.1	MGYG000000101.1	d__Bacteria;p__;c__;o__;f__;g__;s__	SAMN0	PRJN0	UK	Europe	-
 MGYG000000201	MAG	1000	1	1000	50	95	0.5	0	0	0	20	MGYG000000201	MGYG000000201	d__Bacteria;p__;c__;o__;f__;g__;s__	SAMN0	PRJN0	UK	Europe	-
 MGYG000000202	MAG	1000	1	1000	50	90	0.5	0	0	0	20	MGYG000000202	MGYG000000201	d__Bacteria;p__;c__;o__;f__;g__;s__	SAMN0	PRJN0	UK	Europe	-
 MGYG000000301	MAG	1000	1	1000	50	95	0.5	0	0	0	20	MGYG000000301	MGYG000000301	d__Bacteria;p__;c__;o__;f__;g__;s__	SAMN0	PRJN0	UK	Europe	-

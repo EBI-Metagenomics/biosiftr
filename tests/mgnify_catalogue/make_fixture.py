@@ -18,7 +18,7 @@
 The catalogue has the same layout as a catalogue folder on the cluster
 (``<out>/test-host/v1.0/ftp``) and three species:
 
-- MGYG000000101: a singleton.
+- MGYG000000101.1: a singleton with a versioned accession (folder prefix MGYG0000001).
 - MGYG000000201: a pangenome with consistent files. Its accessory clusters are the
   SARS-CoV-2 S gene (two paralogs in one genome) and ORF3a.
 - MGYG000000301: a pangenome with the duplicate-name bug of old mmseqs catalogues.
@@ -177,7 +177,7 @@ class Catalogue:
         :param rep_annotations: The eggNOG annotations of the representative genes.
         """
         genomes = [rep] + members
-        prefix = rep[:-2]
+        prefix = rep.split(".")[0][:-2]  # MGYG000000101.1 -> MGYG0000001
         species_dir = self.root / "species_catalogue" / prefix / rep
         for genome in genomes:
             self.add_metadata(genome, rep, 95 - 5 * genomes.index(genome))
@@ -243,7 +243,7 @@ def main() -> None:
     kegg_rep = [("ko:K00134", "GH1", "Glyco_hydro_1")]
 
     # Singleton
-    rep = "MGYG000000101"
+    rep = "MGYG000000101.1"
     catalogue.add_species(
         rep,
         [],

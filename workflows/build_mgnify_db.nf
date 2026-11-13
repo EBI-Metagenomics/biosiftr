@@ -43,6 +43,14 @@ def catalogueId(catalogue_dir) {
 }
 
 /*
+    Folder prefix of a species: the accession without the version and the last 2 digits
+    (MGYG000000761 -> MGYG0000007, MGYG000000761.1 -> MGYG0000007)
+*/
+def speciesPrefix(rep) {
+    return rep.replaceAll(/\.[0-9]+$/, '')[0..-3]
+}
+
+/*
     A catalogue file can be compressed or not
 */
 def catalogueFile(folder, name) {
@@ -82,15 +90,15 @@ workflow BUILD_MGNIFY_DB {
 
     /*
         Species of the catalogue: [ meta, species folder ]
-        The species folder is species_catalogue/<rep without the last 2 characters>/<rep>
+        The species folder is species_catalogue/<prefix>/<rep> (see speciesPrefix)
     */
     ch_species = channel.fromPath(metadata)
         .splitCsv(sep: '\t', header: true)
         .map { row -> [row.Species_rep, row.Genome] }
         .groupTuple()
         .map { rep, genomes ->
-            def meta = [id: rep, catalogue: catalogue_id, single: genomes.size() == 1]
-            [meta, catalogue_dir.resolve("species_catalogue/${rep[0..-3]}/${rep}")]
+            def meta = [id: rep, prefix: speciesPrefix(rep), catalogue: catalogue_id, single: genomes.size() == 1]
+            [meta, catalogue_dir.resolve("species_catalogue/${meta.prefix}/${rep}")]
         }
         .branch { _meta, _species_dir ->
             single: _meta.single
@@ -101,7 +109,7 @@ workflow BUILD_MGNIFY_DB {
         Stage A: check the pangenome files and correct the species with duplicate gene names
     */
     ch_pangenome_dirs = ch_species.pangenome.map { meta, species_dir ->
-        [meta, species_dir.resolve('pan-genome'), catalogue_dir.resolve("all_genomes/${meta.id[0..-3]}/${meta.id}/genomes1")]
+        [meta, species_dir.resolve('pan-genome'), catalogue_dir.resolve("all_genomes/${meta.prefix}/${meta.id}/genomes1")]
     }
 
     PANGENOME_FIX(ch_pangenome_dirs)

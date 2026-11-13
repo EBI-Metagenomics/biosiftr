@@ -1,2 +1,2 @@
 #query	seed_ortholog	evalue	score	eggNOG_OGs	max_annot_lvl	COG_category	Description	Preferred_name	GOs	EC	KEGG_ko	KEGG_Pathway	KEGG_Module	KEGG_Reaction	KEGG_rclass	BRITE	KEGG_TC	CAZy	BiGG_Reaction	PFAMs
-MGYG000000101_00001	seed	1e-50	-	-	-	-	-	-	-	-	ko:K00134	-	-	-	-	-	-	GH1	-	Glyco_hydro_1
+MGYG000000101.1_00001	seed	1e-50	-	-	-	-	-	-	-	-	ko:K00134	-	-	-	-	-	-	GH1	-	Glyco_hydro_1

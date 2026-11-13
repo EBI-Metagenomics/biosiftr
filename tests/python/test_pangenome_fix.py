@@ -190,6 +190,17 @@ def test_fix_pangenome_fails_when_no_member_matches(species: tuple[Path, Path], 
         fix_pangenome(pangenome_dir, gff_dir, "MGYG1", tmp_path / "fixed")
 
 
+def test_fix_pangenome_versioned_genomes(species: tuple[Path, Path], tmp_path: Path) -> None:
+    # Genome G1.1 has the locus tags G1_<number>: the GFF name comes from the CSV column, not from the tag
+    pangenome_dir, gff_dir = species
+    write_gz(pangenome_dir / CSV_NAME, CSV_BAD.replace(",G1,G2\n", ",G1.1,G2.1\n"))
+    (gff_dir / "G1.gff.gz").rename(gff_dir / "G1.1.gff.gz")
+    (gff_dir / "G2.gff.gz").rename(gff_dir / "G2.1.gff.gz")
+    report = fix_pangenome(pangenome_dir, gff_dir, "G1.1", tmp_path / "fixed")
+    assert report["status"] == "fixed"
+    assert dict(read_fasta(tmp_path / "fixed" / FASTA_NAME))["gyrA_3"] == "ATGTTTCCCTAA"
+
+
 def test_fix_pangenome_fails_when_member_gff_missing(species: tuple[Path, Path], tmp_path: Path) -> None:
     pangenome_dir, gff_dir = species
     (gff_dir / "G2.gff.gz").unlink()
