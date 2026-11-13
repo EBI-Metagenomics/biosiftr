@@ -37,7 +37,7 @@ import logging
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import IO
+from typing import IO, Iterable, Iterator
 
 CSV_NAME = "gene_presence_absence.csv.gz"
 RTAB_NAME = "gene_presence_absence.Rtab.gz"
@@ -73,18 +73,39 @@ def open_gz_writer(path: Path) -> IO[str]:
     return io.TextIOWrapper(gzip.GzipFile(path, "wb", mtime=0), newline="")
 
 
+def iter_csv(path: Path) -> Iterator[list[str]]:
+    """Read a Roary-style gene_presence_absence.csv file one row at a time.
+
+    :param path: The CSV file. It can be compressed (``.gz``).
+    :return: An iterator over the rows. The first row is the header.
+    """
+    csv.field_size_limit(sys.maxsize)
+    with open_text(path) as handle:
+        yield from csv.reader(handle)
+
+
 def read_csv(path: Path) -> tuple[list[str], list[list[str]]]:
-    """Read a Roary-style gene_presence_absence.csv file.
+    """Read a Roary-style gene_presence_absence.csv file into memory (use only for small files).
 
     :param path: The CSV file. It can be compressed (``.gz``).
     :return: The header and the rows.
     """
-    csv.field_size_limit(sys.maxsize)
-    with open_text(path) as handle:
-        reader = csv.reader(handle)
-        header = next(reader)
-        rows = list(reader)
-    return header, rows
+    rows = iter_csv(path)
+    header = next(rows)
+    return header, list(rows)
+
+
+def read_csv_names(path: Path) -> tuple[list[str], list[list[str]]]:
+    """Read the header and the two name columns of the CSV.
+
+    The genome cells are not kept, because a large species has millions of them.
+
+    :param path: The CSV file. It can be compressed (``.gz``).
+    :return: The header and one [Gene, Non-unique Gene name] pair for each row.
+    """
+    rows = iter_csv(path)
+    header = next(rows)
+    return header, [row[:2] for row in rows]
 
 
 def count_rtab_rows(path: Path) -> int:
@@ -97,26 +118,33 @@ def count_rtab_rows(path: Path) -> int:
         return sum(1 for _ in handle) - 1
 
 
-def read_fasta(path: Path) -> list[tuple[str, str]]:
-    """Read a FASTA file and keep the record order.
+def iter_fasta(path: Path) -> Iterator[tuple[str, str]]:
+    """Read a FASTA file one record at a time.
 
     :param path: The FASTA file. It can be compressed (``.gz``).
-    :return: A list of (name, sequence). The name is the first word of the header.
+    :return: An iterator over (name, sequence). The name is the first word of the header.
     """
-    records = []
     name, chunks = None, []
     with open_text(path) as handle:
         for line in handle:
             line = line.strip()
             if line.startswith(">"):
                 if name is not None:
-                    records.append((name, "".join(chunks)))
+                    yield name, "".join(chunks)
                 name, chunks = line[1:].split()[0], []
             elif line:
                 chunks.append(line)
     if name is not None:
-        records.append((name, "".join(chunks)))
-    return records
+        yield name, "".join(chunks)
+
+
+def read_fasta(path: Path) -> list[tuple[str, str]]:
+    """Read a FASTA file into memory and keep the record order (use only for small files).
+
+    :param path: The FASTA file. It can be compressed (``.gz``).
+    :return: A list of (name, sequence).
+    """
+    return list(iter_fasta(path))
 
 
 def split_cell(cell: str) -> list[str]:
@@ -223,8 +251,8 @@ def extract_cds(gff: Path, wanted: dict[str, set[int]]) -> dict[str, str]:
 
 def pair_duplicate_records(
     genomes: list[str],
-    rows: list[list[str]],
-    records: list[tuple[str, str]],
+    rows: dict[int, list[str]],
+    records: dict[int, tuple[str, str]],
     duplicates: dict[str, list[int]],
     gff_dir: Path,
 ) -> dict[int, int]:
@@ -236,14 +264,16 @@ def pair_duplicate_records(
 
     :param genomes: The genome columns of the CSV. They give the GFF file names, because
         the locus tags of a versioned genome (``MGYG000000761.1``) can have no version.
-    :param rows: The CSV rows.
-    :param records: The FASTA records, in file order.
+    :param rows: {CSV row index: row} for the rows with a duplicate name.
+    :param records: {FASTA record index: (name, sequence)} for the records with a duplicate name.
     :param duplicates: Output of :func:`find_duplicates` for the CSV names.
     :param gff_dir: The folder with the member GFF files (``<genome>.gff.gz``).
     :return: {FASTA record index: CSV row index} for each duplicate record.
     :raises PangenomeFixError: If a record does not match exactly one row, or a GFF is missing.
     """
-    record_positions = find_duplicates([name for name, _ in records])
+    record_positions = defaultdict(list)
+    for record_index in sorted(records):
+        record_positions[records[record_index][0]].append(record_index)
     by_genome = defaultdict(lambda: defaultdict(set))  # genome -> locus tag -> allowed lengths
     for name, row_indexes in duplicates.items():
         lengths = {len(records[i][1]) for i in record_positions.get(name, [])}
@@ -288,36 +318,39 @@ def pair_duplicate_records(
     return pairs
 
 
-def write_csv(path: Path, header: list[str], rows: list[list[str]]) -> None:
-    """Write the CSV with paralogs joined by ``;``.
+def write_csv_and_rtab(csv_in: Path, outdir: Path, new_names: dict[int, str]) -> None:
+    """Write the corrected CSV and an Rtab built from it.
 
-    :param path: The output file (compressed).
-    :param header: The CSV header.
-    :param rows: The CSV rows.
+    The CSV is read one row at a time. The CSV paralogs are joined by ``;``. The Rtab is
+    sorted by gene name, as in the catalogue pipeline. Each Rtab row is kept as one integer
+    (one bit for each genome), so a large species uses little memory.
+
+    :param csv_in: The catalogue CSV file.
+    :param outdir: The output folder.
+    :param new_names: {CSV row index: new name}.
     """
-    with open_gz_writer(path) as handle:
+    rows = iter_csv(csv_in)
+    header = next(rows)
+    genome_count = len(header) - CSV_META_COLUMNS
+    presence = []  # (gene name, bits)
+    with open_gz_writer(outdir / CSV_NAME) as handle:
         writer = csv.writer(handle, lineterminator="\n")
         writer.writerow(header)
-        for row in rows:
+        for index, row in enumerate(rows):
+            name = new_names.get(index, row[0])
             cells = [";".join(split_cell(cell)) for cell in row[CSV_META_COLUMNS:]]
-            writer.writerow(row[:CSV_META_COLUMNS] + cells)
+            writer.writerow([name] + row[1:CSV_META_COLUMNS] + cells)
+            bits = "".join("1" if cell else "0" for cell in cells).ljust(genome_count, "0")
+            presence.append((name, int(bits or "0", 2)))
 
-
-def write_rtab(path: Path, header: list[str], rows: list[list[str]]) -> None:
-    """Write an Rtab built from the CSV, sorted by gene name as in the catalogue pipeline.
-
-    :param path: The output file (compressed).
-    :param header: The CSV header.
-    :param rows: The CSV rows.
-    """
-    with open_gz_writer(path) as handle:
+    with open_gz_writer(outdir / RTAB_NAME) as handle:
         handle.write("\t".join(["Gene"] + header[CSV_META_COLUMNS:]) + "\n")
-        for row in sorted(rows, key=lambda row: row[0]):
-            values = ["1" if split_cell(cell) else "0" for cell in row[CSV_META_COLUMNS:]]
-            handle.write("\t".join([row[0]] + values) + "\n")
+        for name, bits in sorted(presence, key=lambda item: item[0]):
+            values = format(bits, f"0{genome_count}b") if genome_count else ""
+            handle.write("\t".join([name] + list(values)) + "\n")
 
 
-def write_fasta(path: Path, records: list[tuple[str, str]]) -> None:
+def write_fasta(path: Path, records: Iterable[tuple[str, str]]) -> None:
     """Write the FASTA records, one sequence line per record.
 
     :param path: The output file (compressed).
@@ -331,6 +364,9 @@ def write_fasta(path: Path, records: list[tuple[str, str]]) -> None:
 def fix_pangenome(pangenome_dir: Path, gff_dir: Path, species: str, outdir: Path) -> dict[str, str]:
     """Check the pangenome files of one species and write corrected files if needed.
 
+    The files are read in streams. Only the names, and the full rows and records of the
+    duplicate names, stay in memory.
+
     :param pangenome_dir: The ``pan-genome`` folder of the species.
     :param gff_dir: The folder with the member GFF files.
     :param species: The species representative accession (used in the report).
@@ -338,54 +374,57 @@ def fix_pangenome(pangenome_dir: Path, gff_dir: Path, species: str, outdir: Path
     :return: The report line as {column: value}.
     :raises PangenomeFixError: If the files are not consistent and cannot be corrected.
     """
-    header, rows = read_csv(pangenome_dir / CSV_NAME)
+    csv_in, fasta_in = pangenome_dir / CSV_NAME, pangenome_dir / FASTA_NAME
+    header, name_rows = read_csv_names(csv_in)
     rtab_rows = count_rtab_rows(pangenome_dir / RTAB_NAME)
-    records = read_fasta(pangenome_dir / FASTA_NAME)
-    names = [row[0] for row in rows]
+    record_names = [name for name, _ in iter_fasta(fasta_in)]
+    names = [row[0] for row in name_rows]
     duplicates = find_duplicates(names)
-    fasta_duplicates = find_duplicates([name for name, _ in records])
+    fasta_duplicates = find_duplicates(record_names)
 
     report = {
         "species": species,
         "status": "ok",
-        "csv_rows": str(len(rows)),
+        "csv_rows": str(len(names)),
         "rtab_rows": str(rtab_rows),
-        "fasta_records": str(len(records)),
+        "fasta_records": str(len(record_names)),
         "duplicate_names": str(len(duplicates)),
         "renamed_rows": "0",
     }
-    if len(rows) == rtab_rows == len(records) and not duplicates and not fasta_duplicates:
+    if len(names) == rtab_rows == len(record_names) and not duplicates and not fasta_duplicates:
         return report
-    if not duplicates or Counter(names) != Counter(name for name, _ in records):
+    if not duplicates or Counter(names) != Counter(record_names):
         raise PangenomeFixError(
             f"{species}: files are not consistent, but not because of duplicate names "
-            f"(CSV {len(rows)}, Rtab {rtab_rows}, FASTA {len(records)})"
+            f"(CSV {len(names)}, Rtab {rtab_rows}, FASTA {len(record_names)})"
         )
 
-    new_names = new_names_for_duplicates(rows, duplicates)
-    pairs = pair_duplicate_records(header[CSV_META_COLUMNS:], rows, records, duplicates, gff_dir)
-
-    renames = []
-    for index, new_name in sorted(new_names.items()):
-        renames.append((rows[index][0], new_name, rows[index][1]))
-        rows[index][0] = new_name
-    fixed_records = [
-        (rows[pairs[i]][0], sequence) if i in pairs else (name, sequence) for i, (name, sequence) in enumerate(records)
-    ]
-    if len({name for name, _ in fixed_records}) != len(rows):
+    new_names = new_names_for_duplicates(name_rows, duplicates)
+    if len(set(names) | set(new_names.values())) != len(names):
         raise PangenomeFixError(f"{species}: corrected names are not unique")
 
+    duplicate_rows = {index for indexes in duplicates.values() for index in indexes}
+    csv_rows = iter_csv(csv_in)
+    next(csv_rows)  # header
+    rows = {index: row for index, row in enumerate(csv_rows) if index in duplicate_rows}
+    records = {index: record for index, record in enumerate(iter_fasta(fasta_in)) if record[0] in duplicates}
+    pairs = pair_duplicate_records(header[CSV_META_COLUMNS:], rows, records, duplicates, gff_dir)
+
     outdir.mkdir(parents=True, exist_ok=True)
-    write_csv(outdir / CSV_NAME, header, rows)
-    write_rtab(outdir / RTAB_NAME, header, rows)
+    write_csv_and_rtab(csv_in, outdir, new_names)
+    # A record keeps its name, except when its paired CSV row got a new name
+    record_new_names = {record: new_names[row] for record, row in pairs.items() if row in new_names}
+    fixed_records = (
+        (record_new_names.get(index, name), sequence) for index, (name, sequence) in enumerate(iter_fasta(fasta_in))
+    )
     write_fasta(outdir / FASTA_NAME, fixed_records)
     with open(outdir / "renamed_genes.tsv", "w") as handle:
         handle.write("old_name\tnew_name\tnon_unique_gene_name\n")
-        for old_name, new_name, base in renames:
-            handle.write(f"{old_name}\t{new_name}\t{base}\n")
+        for index, new_name in sorted(new_names.items()):
+            handle.write(f"{names[index]}\t{new_name}\t{name_rows[index][1]}\n")
 
     report["status"] = "fixed"
-    report["renamed_rows"] = str(len(renames))
+    report["renamed_rows"] = str(len(new_names))
     return report
 
 
