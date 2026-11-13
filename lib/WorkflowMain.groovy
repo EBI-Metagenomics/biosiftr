@@ -44,9 +44,23 @@ class WorkflowMain {
         // Check AWS batch settings
         NfcoreTemplate.awsBatch(workflow, params)
 
+        // Database build mode needs the catalogue and the eggNOG data, not reads
+        if (params.new_mgnify_db) {
+            if (!params.catalogue_path) {
+                Nextflow.error("Please provide the MGnify catalogue folder with '--catalogue_path' when you use '--new_mgnify_db'")
+            }
+            if (!params.eggnog_db_dir) {
+                Nextflow.error("Please provide the eggNOG-mapper data folder with '--eggnog_db_dir' when you use '--new_mgnify_db'")
+            }
+            return
+        }
+
         // Check input has been provided
         if (!params.input) {
             Nextflow.error("Please provide an input samplesheet to the pipeline e.g. '--input samplesheet.csv'")
+        }
+        if (!params.biome) {
+            Nextflow.error("Please provide the MGnify catalogue to map the reads to e.g. '--biome human-gut-v2-0-2'")
         }
     }
 }

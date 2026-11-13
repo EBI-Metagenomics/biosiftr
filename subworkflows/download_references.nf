@@ -23,7 +23,11 @@ workflow DOWNLOAD_REFERENCES {
 
     biome_sourmash_db_file = file("${params.reference_dbs}/${biome}/sourmash_species_representatives_k21.sbt.zip")
     biome_genomes_metadata_file = file("${params.reference_dbs}/${biome}/genomes-all_metadata.tsv")
-    biome_bwa_db_files = file("${params.reference_dbs}/${biome}/bwa_reps.*")
+    // The index files can be in the biome folder, in reps_bwamem2/ (output of --new_mgnify_db)
+    // or in bwamem2_index/reps_bwamem2/ (output of the download)
+    biome_bwa_db_files = ["", "reps_bwamem2/", "bwamem2_index/reps_bwamem2/"].collectMany { subdir ->
+        file("${params.reference_dbs}/${biome}/${subdir}bwa_reps.*")
+    }
     biome_pangenome_functional_anns_db_dir = file("${params.reference_dbs}/${biome}/functional_profiles_DB/")
     biome_kegg_completeness_db_dir = file("${params.reference_dbs}/${biome}/kegg_completeness_DB/")
 

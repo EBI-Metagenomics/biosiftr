@@ -9,8 +9,7 @@
             "title": "Input/output options",
             "type": "object",
             "fa_icon": "fas fa-terminal",
-            "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "biome"],
+            "description": "Define where the pipeline should find input data and save output data. --input and --biome are required unless --new_mgnify_db is used.",
             "properties": {
                 "input": {
                     "type": "string",
@@ -105,6 +104,38 @@
                     "format": "directory-path",
                     "fa_icon": "fas fa-folder",
                     "description": "Path to the folder containing the BWAMEM2 indexes used for cleaning and decontaminating the reads. Ensure that the indexes are properly formatted. Example: /path/to/decontamination_indexes."
+                }
+            }
+        },
+        "mgnify_db_build_options": {
+            "title": "MGnify database build options",
+            "type": "object",
+            "fa_icon": "fas fa-hammer",
+            "description": "Build the BioSIFTR databases of an MGnify genomes catalogue (--new_mgnify_db) instead of profiling reads.",
+            "properties": {
+                "new_mgnify_db": {
+                    "type": "boolean",
+                    "description": "Build the BioSIFTR databases of the catalogue given with --catalogue_path.",
+                    "fa_icon": "fas fa-hammer"
+                },
+                "catalogue_path": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to the MGnify genomes catalogue folder (the folder with genomes-all_metadata.tsv, species_catalogue/ and all_genomes/).",
+                    "help_text": "Example: /nfs/production/rdf/metagenomics/catalogs/mouse-gut/v1.0/ftp",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "catalogue_id": {
+                    "type": "string",
+                    "description": "Catalogue ID used as the output folder name (for example mouse-gut-v1-0). By default it comes from --catalogue_path.",
+                    "pattern": "^\\S+-v[0-9]+(-[0-9]+)*$",
+                    "fa_icon": "fas fa-tag"
+                },
+                "eggnog_db_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to the eggNOG-mapper data folder, with eggnog.db and eggnog_proteins.dmnd.",
+                    "fa_icon": "fas fa-database"
                 }
             }
         },
@@ -268,6 +299,9 @@
         },
         {
             "$ref": "#/definitions/reference_databases"
+        },
+        {
+            "$ref": "#/definitions/mgnify_db_build_options"
         },
         {
             "$ref": "#/definitions/max_job_request_options"

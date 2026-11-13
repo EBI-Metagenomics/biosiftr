@@ -1,0 +1,69 @@
+nextflow_pipeline {
+
+    name "Test bioSIFTR database build (--new_mgnify_db)"
+    script "../main.nf"
+    config "./nextflow.config"
+    tag "pipeline"
+    tag "build_mgnify_db"
+
+    test("Build the databases of a tiny catalogue: 1 singleton, 1 consistent pangenome, 1 pangenome with duplicate gene names") {
+
+        when {
+            params {
+                outdir         = "$outputDir"
+                new_mgnify_db  = true
+                catalogue_path = "$baseDir/tests/mgnify_catalogue/test-host/v1.0/ftp"
+                eggnog_db_dir  = "$baseDir/tests/eggnog_db"
+            }
+        }
+
+        then {
+            def db_dir = "${params.outdir}/test-host-v1-0"
+            // stable_name: All files + folders in ${params.outdir}/ with a stable name
+            def stable_name = getAllFilesFromDir(
+                params.outdir,
+                relative: true,
+                includeDir: true,
+                ignore: [
+                    'pipeline_info/*'
+                ]
+            )
+            // stable_path: All files in ${params.outdir}/ with stable content
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            def fixed_dir = "${db_dir}/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301/pan-genome"
+            assertAll(
+                { assert workflow.success },
+                // Only the species with duplicate gene names is corrected
+                { assert path("${db_dir}/pangenome_check_report.tsv").readLines() == [
+                    "species\tstatus\tcsv_rows\trtab_rows\tfasta_records\tduplicate_names\trenamed_rows",
+                    "MGYG000000201\tok\t4\t4\t4\t0\t0",
+                    "MGYG000000301\tfixed\t3\t2\t3\t1\t1",
+                ] },
+                // Only the corrected species gets a folder, with all the files to replace in the catalogue
+                { assert !new File("${db_dir}/catalogue_fixes/species_catalogue/MGYG0000002").exists() },
+                { assert new File(fixed_dir).list().sort() == [
+                    "gene_presence_absence.Rtab.gz",
+                    "gene_presence_absence.csv.gz",
+                    "gene_prevalence_corrected.txt.gz",
+                    "pan-genome.fna.gz",
+                    "renamed_genes.tsv",
+                ] },
+                // The corrected cluster gets its eggNOG annotation (SARS-CoV-2 N gene -> K00927)
+                { assert path("${db_dir}/functional_profiles_DB/MGYG000000301_clstr.tsv").readLines().any { line -> line.startsWith("MGYG000000302_1\tMGYG000000302_00002\t") && line.contains("\tK00927\t") } },
+                { assert path("${fixed_dir}/renamed_genes.tsv").readLines()[1] == "gyrA_2\tgyrA_3\tgyrA" },
+                // Archives for the FTP site (content is not stable: time stamps)
+                { assert path("${db_dir}/to_upload/pangenome_functional_profiles.tar.gz").exists() },
+                { assert path("${db_dir}/to_upload/kegg_completeness.tar.gz").exists() },
+                { assert path("${db_dir}/to_upload/reps_bwamem2.tar.gz").exists() },
+                { assert snapshot(
+                    // Number of tasks
+                    workflow.trace.succeeded().size(),
+                    // All stable path name
+                    stable_name,
+                    // All files with stable contents
+                    stable_path,
+                ).match() }
+            )
+        }
+    }
+}

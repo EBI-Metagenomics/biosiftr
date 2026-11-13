@@ -123,6 +123,40 @@ This can be any of the MGnify catalogues for which shallow-mapping databases are
 >
 > The human-gut shallow-mapping database was created manually by re-running Panaroo to reconstruct the pangenomes. This is likely to have caused discrepancies in the pangenomes, so please bear that in mind.
 
+### Build the databases of an MGnify catalogue
+
+Use `--new_mgnify_db` to build the BioSIFTR databases of an MGnify genomes catalogue. The input is the catalogue folder (the folder with `genomes-all_metadata.tsv`, `species_catalogue/` and `all_genomes/`). The catalogue must have the pangenome tables (`gene_presence_absence.csv`, `gene_presence_absence.Rtab`, `gene_prevalence_corrected.txt` and `pan-genome.fna`, compressed or not).
+
+```bash
+nextflow run ebi-metagenomics/biosiftr \
+   --new_mgnify_db \
+   --catalogue_path </path/to/catalogs/<host>/<vX.Y>/ftp> \
+   --eggnog_db_dir </path/to/eggnog/data> \
+   --reference_dbs </path/to/dbs> \
+   --outdir <OUTDIR>
+```
+
+- `--eggnog_db_dir` is the eggNOG-mapper data folder, with `eggnog.db` and `eggnog_proteins.dmnd`.
+- `--reference_dbs` gives `dram_dbs/Pfam-A.hmm.dat.gz`. If the folder does not exist, the pipeline downloads the DRAM databases.
+- The catalogue ID (the output folder name) comes from the path: `.../mouse-gut/v1.0/ftp` gives `mouse-gut-v1-0`. Use `--catalogue_id` to set another ID.
+
+The pipeline writes `<OUTDIR>/<catalogue_id>/`:
+
+| Path                                                           | Content                                                                                  |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `functional_profiles_DB/`                                      | One table per species: KEGG, CAZy and Pfam annotations per gene, labelled as core or not |
+| `kegg_completeness_DB/`                                        | One table per species: KEGG module completeness for the pangenome and for the core genes |
+| `sourmash_species_representatives_k21.sbt.zip`                 | Sourmash database of the species representatives (k = 21)                                |
+| `reps_bwamem2/`                                                | bwa-mem2 index of the species representatives                                            |
+| `genomes-all_metadata.tsv`                                     | Copy of the catalogue metadata                                                           |
+| `to_upload/`                                                   | Archives for the FTP site, with the names that the pipeline downloads                    |
+| `pangenome_check_report.tsv`                                   | Result of the pangenome check, one line per species with a pangenome                     |
+| `catalogue_fixes/species_catalogue/<prefix>/<rep>/pan-genome/` | Corrected pangenome files (see below)                                                    |
+
+Copy `<OUTDIR>/<catalogue_id>` to the `--reference_dbs` folder to use the databases with `--biome <catalogue_id>`. A new catalogue ID is not in the list of available biomes, so also use `--validate_params false` until the ID is added to `nextflow_schema.json`.
+
+**Pangenome check.** Old releases of the catalogue pipeline can give two pangenome clusters the same name (for example a suffixed `gyrA_2` and a Prokka paralog `gyrA_2`). Then the CSV and `pan-genome.fna` have the name two times and the Rtab loses one cluster. For these species, the pipeline gives the suffixed cluster a new free name, pairs each FASTA record with its cluster by an exact match to a member CDS, rebuilds the Rtab from the CSV and runs CGT again. The corrected files are in `catalogue_fixes/`, at the same paths as in the catalogue, and `renamed_genes.tsv` lists the new names. Use these files to replace the bad files in a new catalogue release.
+
 ## Test
 
 To test the installed tool with your downloaded databases, you can run the pipeline using the small test dataset. Even if there are no hits with the biome you are interested in, the pipeline should finish successfully. Add `-profile` if you have set up a config profile for your compute resources.

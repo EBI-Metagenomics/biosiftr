@@ -19,3 +19,5 @@ integrated_annotation/*
 kegg_completeness/*
 mapping/bwamem2/*
 pipeline_info/*
+*/sourmash_species_representatives_k21.sbt.zip
+*/to_upload/*

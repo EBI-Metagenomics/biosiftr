@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 # Copyright 2025 EMBL - European Bioinformatics Institute
 #
@@ -14,434 +13,340 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Build the BioSIFTR functional profile table of one MGnify species.
+
+Mode ``pre`` writes the FASTA of the accessory genes (pangenome clusters that are absent
+from the species representative). These genes need an eggNOG annotation.
+
+Mode ``post`` writes ``<rep>_clstr.tsv``: the genes of the representative with their
+eggNOG annotation, plus one member gene for each accessory cluster with the eggNOG
+annotation of the cluster. Each gene is labelled as core (``true``) or not (``false``).
+"""
+
+from __future__ import annotations
 
 import argparse
+import csv
 import gzip
-import os.path
+import logging
+import sys
+from collections import defaultdict
+from pathlib import Path
+from typing import IO
 
-from Bio import SeqIO
+CSV_META_COLUMNS = 3  # Gene, Non-unique Gene name, Annotation
+EVALUE_THRESHOLD = 1e-10
+OUTPUT_COLUMNS = ["#contig", "gene_id", "start", "end", "strand", "kegg", "cazy", "pfam", "core"]
 
 
-def pfam_parser(pfam_data):
+def open_text(path: Path) -> IO[str]:
+    """Open a text file for reading. The file can be compressed (``.gz``).
+
+    :param path: The file to open.
+    :return: A text file handle.
+    """
+    if path.suffix == ".gz":
+        return gzip.open(path, "rt")
+    return open(path)
+
+
+def split_cell(cell: str) -> list[str]:
+    """Split a genome cell of the CSV into locus tags.
+
+    Old mmseqs CSV files join paralogs with a TAB, Panaroo and new mmseqs files use ``;``.
+
+    :param cell: The cell value.
+    :return: The locus tags. The list is empty if the cluster is absent.
+    """
+    return [tag for tag in cell.replace("\t", ";").split(";") if tag]
+
+
+def pfam_parser(pfam_dat: Path) -> dict[str, str]:
+    """Map the Pfam names to the Pfam accessions (without version).
+
+    :param pfam_dat: The ``Pfam-A.hmm.dat.gz`` file.
+    :return: {Pfam name: Pfam accession}.
+    """
     pfam_desc = {}
-    with gzip.open(pfam_data, "rt", encoding="utf-8") as input_file:
-        entry = []
-        for line in input_file:
+    entry = {}
+    with open_text(pfam_dat) as handle:
+        for line in handle:
             line = line.strip()
-            if line == "//" and entry:
-                entry_dict = {}
-                for entry_line in entry:
-                    if entry_line.startswith("#=GF ID"):
-                        entry_dict["ID"] = entry_line.split()[-1]
-                    elif entry_line.startswith("#=GF AC"):
-                        entry_dict["AC"] = entry_line.split()[-1].split(".")[0]
-                if "ID" in entry_dict and "AC" in entry_dict:
-                    pfam_desc[entry_dict["ID"]] = entry_dict["AC"]
-                entry = []
-            else:
-                entry.append(line)
+            if line == "//":
+                if "ID" in entry and "AC" in entry:
+                    pfam_desc[entry["ID"]] = entry["AC"]
+                entry = {}
+            elif line.startswith("#=GF ID"):
+                entry["ID"] = line.split()[-1]
+            elif line.startswith("#=GF AC"):
+                entry["AC"] = line.split()[-1].split(".")[0]
     return pfam_desc
 
 
-def metadata_parser(catalogue_metadata):
-    reps_clusters = {}
-    with open(catalogue_metadata) as input_file:
-        next(input_file)
-        for line in input_file:
-            l_line = line.rstrip().split("\t")
-            clstr_member = l_line[0]
-            rep_genome = l_line[13]
-            if rep_genome in reps_clusters:
-                reps_clusters[rep_genome].append(clstr_member)
-            else:
-                reps_clusters[rep_genome] = [clstr_member]
-    return reps_clusters
+def read_pangenome_csv(path: Path, rep: str) -> tuple[list[str], list[list[str]], int]:
+    """Read the gene_presence_absence.csv of a species.
+
+    :param path: The CSV file. It can be compressed (``.gz``).
+    :param rep: The species representative accession.
+    :return: The genome columns, the rows, and the column index of the representative.
+    :raises ValueError: If the representative is not a column of the CSV, or the names are not unique.
+    """
+    csv.field_size_limit(sys.maxsize)
+    with open_text(path) as handle:
+        reader = csv.reader(handle)
+        header = next(reader)
+        rows = list(reader)
+    if rep not in header:
+        raise ValueError(f"{rep} is not a genome column of {path}")
+    names = [row[0] for row in rows]
+    if len(set(names)) != len(names):
+        raise ValueError(f"{path} has duplicate gene names. Correct the pangenome files first (pangenome_fix.py)")
+    return header[CSV_META_COLUMNS:], rows, header.index(rep)
 
 
-def accessory_writer(reps_clusters, loc_prefix):
-    for rep in reps_clusters:
-        if len(reps_clusters[rep]) > 1:
-            if rep.endswith(".1"):
-                rep_prefix = rep[:-4]
-            else:
-                rep_prefix = rep[:-2]
-            pan_loc = (
-                loc_prefix
-                + "/species_catalogue/"
-                + rep_prefix
-                + "/"
-                + rep
-                + "/pan-genome/"
-            )
+def read_core_clusters(prevalence: Path) -> set[str]:
+    """Read the clusters that CGT labels as core.
 
-            # Parsing the presence/absence tab
-            r_tab_loc = pan_loc + "gene_presence_absence.Rtab"
-            accessory_genes = []
-            with open(r_tab_loc) as input_file:
-                header = input_file.readline().strip().split("\t")
-                index = header.index(rep)
-                for line in input_file:
-                    l_line = line.rstrip().split("\t")
-                    if l_line[index] == "0":
-                        accessory_genes.append(l_line[0])
-
-            # Parsing the fasta file of genes
-            genes_loc = pan_loc + "pan-genome.fna"
-            with open(rep + "_accessory.fasta", "w") as fasta_out:
-                for record in SeqIO.parse(genes_loc, "fasta"):
-                    seq_id = str(record.id)
-                    if seq_id in accessory_genes:
-                        fasta_out.write(">" + seq_id + "\n")
-                        fasta_out.write(str(record.seq).upper() + "\n")
+    :param prevalence: The ``gene_prevalence_corrected.txt`` file (``gene``, ``count``, ``label``).
+    :return: The names of the core clusters.
+    """
+    core = set()
+    with open_text(prevalence) as handle:
+        for line in handle:
+            if line.startswith("#") or line.startswith("gene\t"):
+                continue
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) >= 3 and parts[2] == "core":
+                core.add(parts[0])
+    return core
 
 
-def annot_writer(reps_clusters, loc_prefix, pfam_desc):
-    for rep in reps_clusters:
-        core_list, core_mgygs = [], []
-        if rep.endswith(".1"):
-            rep_prefix = rep[:-4]
-        else:
-            rep_prefix = rep[:-2]
-        rep_loc = (
-            loc_prefix + "/species_catalogue/" + rep_prefix + "/" + rep + "/genome/"
-        )
+def read_fasta(path: Path) -> dict[str, str]:
+    """Read a FASTA file.
 
-        # Parsing the gff file of clusters size = 1
-        gff_loc = rep_loc + rep + ".gff"
-        gff_dict = gff_parser(gff_loc)
-
-        # Parsing the eggNOG file of clusters size = 1
-        eggnog_loc = rep_loc + rep + "_eggNOG.tsv"
-        gff_dict = eggnog_parser(eggnog_loc, gff_dict, pfam_desc)
-
-        # Generating output for cluster = 1
-        if len(reps_clusters[rep]) == 1:
-            output_writer(gff_dict, rep, 1, core_mgygs)
-
-        # Parsing the accesory genes annotation
-        else:
-            acc_gff_dict = {}
-            clstr_size = len(reps_clusters[rep])
-
-            # Parsing the core genes list
-            pan_loc = (
-                loc_prefix
-                + "/species_catalogue/"
-                + rep_prefix
-                + "/"
-                + rep
-                + "/pan-genome/"
-            )
-            core_tab_loc = pan_loc + "core_genes.txt"
-
-            # Saving the core genes ids
-            with open(core_tab_loc) as input_file:
-                for line in input_file:
-                    gene_name = line.rstrip()
-                    core_list.append(gene_name)
-
-            # Parsing the pangenomic table
-            acc_tab_loc = pan_loc + "gene_presence_absence.csv"
-
-            # Keep only one accessory gene per genome
-            accesory_genes = {}
-            relevant_members = []
-            relevant_genes = []
-            with open(acc_tab_loc) as input_file:
-                next(input_file)
-                for line in input_file:
-                    l_line = line.rstrip().split(",")
-                    gene_key = l_line[0]
-                    genomes_list = l_line[3:]
-                    for member_gen in genomes_list:
-                        if "MGYG" in member_gen:
-                            if ";" in member_gen:
-                                for each_gene in member_gen.split(";"):
-                                    if "MGYG" in each_gene:
-                                        prefix = member_gen.split("_")[0]
-                            else:
-                                prefix = member_gen.split("_")[0]
-                                if prefix != rep:
-                                    if gene_key not in accesory_genes:
-                                        relevant_members.append(prefix)
-                                        accesory_genes[gene_key] = member_gen
-                                        relevant_genes.append(member_gen)
-                                        if gene_key in core_list:
-                                            core_mgygs.append(member_gen)
-                                else:
-                                    if gene_key in core_list:
-                                        core_mgygs.append(member_gen)
-
-            # Saving coordinates and strand of selected accessory genes
-            relevant_members = list(set(relevant_members))
-            for member in relevant_members:
-                all_loc = (
-                    loc_prefix + "/all_genomes/" + rep_prefix + "/" + rep + "/genomes1/"
-                )
-                mem_gff_loc = all_loc + member + ".gff.gz"
-                acc_gff_dict = acc_gff_parser(mem_gff_loc, relevant_genes, acc_gff_dict)
-
-            # Parsing the eggNOG annotation for accessory genes of relevant genomes
-            eggnog_annot = "./emapper_results/" + rep + "_out.emapper.annotations"
-            if os.path.exists(eggnog_annot):
-                acc_gff_dict = acc_eggnog_parser(
-                    eggnog_annot, accesory_genes, acc_gff_dict, pfam_desc
-                )
-
-            # Integrating representative and accessory annotations
-            integrated_dict = {}
-            for rep_gene, annot_data in gff_dict.items():
-                integrated_dict[rep_gene] = annot_data
-            for acc_gene, acc_annot_data in acc_gff_dict.items():
-                if len(acc_annot_data) == 7:
-                    integrated_dict[acc_gene] = acc_annot_data
-            output_writer(integrated_dict, rep, clstr_size, core_mgygs)
+    :param path: The FASTA file. It can be compressed (``.gz``).
+    :return: {name: sequence}. The name is the first word of the header.
+    """
+    sequences = {}
+    name, chunks = None, []
+    with open_text(path) as handle:
+        for line in handle:
+            line = line.strip()
+            if line.startswith(">"):
+                if name is not None:
+                    sequences[name] = "".join(chunks)
+                name, chunks = line[1:].split()[0], []
+            elif line:
+                chunks.append(line)
+    if name is not None:
+        sequences[name] = "".join(chunks)
+    return sequences
 
 
-def gff_parser(gff_file):
-    gff_dict = {}
-    with open(gff_file) as input_file:
-        for line in input_file:
-            l_line = line.rstrip().split("\t")
-            # Annotation lines have exactly 9 columns
-            if len(l_line) == 9:
-                (
-                    contig,
-                    seq_source,
-                    seq_type,
-                    start,
-                    end,
-                    score,
-                    strand,
-                    phase,
-                    attr,
-                ) = line.rstrip().split("\t")
-                strand = strand.replace("+", "1").replace("-", "-1")
-                if seq_type == "CDS":
-                    att_l = attr.split(";")
-                    gene_id = att_l[0].replace("ID=", "")
-                    gff_dict[gene_id] = [contig, start, end, strand]
-    return gff_dict
+def gff_parser(gff: Path, wanted: set[str] | None = None) -> dict[str, list[str]]:
+    """Read the CDS coordinates of a GFF file.
+
+    :param gff: The GFF file. It can be compressed (``.gz``).
+    :param wanted: Keep only these locus tags. Keep all CDS if it is ``None``.
+    :return: {locus tag: [contig, start, end, strand]}. The strand is ``1`` or ``-1``.
+    """
+    genes = {}
+    with open_text(gff) as handle:
+        for line in handle:
+            if line.startswith("##FASTA"):
+                break
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) != 9 or parts[2] != "CDS":
+                continue
+            locus_tag = parts[8].split(";")[0].replace("ID=", "")
+            if wanted is None or locus_tag in wanted:
+                strand = "1" if parts[6] == "+" else "-1"
+                genes[locus_tag] = [parts[0], parts[3], parts[4], strand]
+    return genes
 
 
-def eggnog_parser(eggnog_out, gff_dict, pfam_desc):
-    ko_annot, cazy_annot, pfam_annot = {}, {}, {}
-    with open(eggnog_out) as input_file:
-        next(input_file)
-        for line in input_file:
-            l_line = line.rstrip().split("\t")
-            gene_id = l_line[0]
-            evalue = float(l_line[2])
-            if evalue <= 1e-10:
-                kegg_ko = l_line[11].replace("ko:", "")
-                ko_annot[gene_id] = kegg_ko
-                cazys = l_line[18]
-                cazy_annot[gene_id] = cazys
-                pfams_raw = l_line[20]
-                if pfams_raw != "-":
-                    if "," in pfams_raw:
-                        pfam_ids_list = []
-                        for each_pfam in pfams_raw.split(","):
-                            if each_pfam in pfam_desc:
-                                pfam_id = pfam_desc[each_pfam]
-                                pfam_ids_list.append(pfam_id)
-                        pfam_ids_list = list(set(pfam_ids_list))
-                        if len(pfam_ids_list) > 0:
-                            pfams = ",".join(pfam_ids_list)
-                        else:
-                            pfams = "-"
-                    else:
-                        if pfams_raw in pfam_desc:
-                            pfams = pfam_desc[pfams_raw]
-                        else:
-                            pfams = "-"
-                else:
-                    pfams = pfams_raw
-                pfam_annot[gene_id] = pfams
+def eggnog_parser(eggnog: Path, pfam_desc: dict[str, str]) -> dict[str, tuple[str, str, str]]:
+    """Read the KEGG, CAZy and Pfam annotations of an eggNOG-mapper output.
 
-    for gene in gff_dict:
-        if gene in ko_annot:
-            gff_dict[gene].append(ko_annot[gene])
-        else:
-            gff_dict[gene].append("-")
-        if gene in cazy_annot:
-            gff_dict[gene].append(cazy_annot[gene])
-        else:
-            gff_dict[gene].append("-")
-        if gene in pfam_annot:
-            gff_dict[gene].append(pfam_annot[gene])
-        else:
-            gff_dict[gene].append("-")
+    Only the hits with an e-value of 1e-10 or less are kept.
 
-    return gff_dict
+    :param eggnog: The eggNOG-mapper annotations (``*_eggNOG.tsv`` or ``*.emapper.annotations``).
+    :param pfam_desc: Output of :func:`pfam_parser`.
+    :return: {query: (kegg, cazy, pfam)}.
+    """
+    annotations = {}
+    with open_text(eggnog) as handle:
+        for line in handle:
+            if line.startswith("#"):
+                continue
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) < 21:
+                continue
+            try:
+                evalue = float(parts[2])
+            except ValueError:  # header line without "#"
+                continue
+            if evalue > EVALUE_THRESHOLD:
+                continue
+            kegg = parts[11].replace("ko:", "")
+            pfam_ids = sorted({pfam_desc[name] for name in parts[20].split(",") if name in pfam_desc})
+            annotations[parts[0]] = (kegg, parts[18], ",".join(pfam_ids) if pfam_ids else "-")
+    return annotations
 
 
-def acc_gff_parser(mem_gff_out, relevant_genes, acc_gff_dict):
-    with gzip.open(mem_gff_out, "rt") as input_file:
-        for line in input_file:
-            l_line = line.rstrip().split("\t")
-            # Annotation lines have exactly 9 columns
-            if len(l_line) == 9:
-                (
-                    contig,
-                    seq_source,
-                    seq_type,
-                    start,
-                    end,
-                    score,
-                    strand,
-                    phase,
-                    attr,
-                ) = line.rstrip().split("\t")
-                strand = strand.replace("+", "1").replace("-", "-1")
-                if seq_type == "CDS":
-                    att_l = attr.split(";")
-                    gene_id = att_l[0].replace("ID=", "")
-                    if gene_id in relevant_genes:
-                        acc_gff_dict[gene_id] = [contig, start, end, strand]
-    return acc_gff_dict
+def accessory_rows(rows: list[list[str]], rep_index: int) -> list[list[str]]:
+    """Get the CSV rows of the clusters that are absent from the representative.
+
+    :param rows: The CSV rows.
+    :param rep_index: The column index of the representative.
+    :return: The accessory rows.
+    """
+    return [row for row in rows if not split_cell(row[rep_index])]
 
 
-def acc_eggnog_parser(eggnog_annot, accesory_genes, acc_gff_dict, pfam_desc):
-    rev_accesory_genes = {}
-    for pan_gene, genome_gene in accesory_genes.items():
-        rev_accesory_genes[genome_gene] = pan_gene
-    kegg_annot, pfam_annot, cazy_annot = {}, {}, {}
-    with open(eggnog_annot) as input_file:
-        next(input_file)
-        for line in input_file:
-            l_line = line.rstrip().split("\t")
-            gene_id = l_line[0]
-            evalue = float(l_line[2])
-            if evalue <= 1e-10:
-                kegg_ko = l_line[11].replace("ko:", "")
-                kegg_annot[gene_id] = kegg_ko
-                cazy = l_line[18]
-                cazy_annot[gene_id] = cazy
-                pfams_raw = l_line[20]
-                if pfams_raw != "-":
-                    if "," in pfams_raw:
-                        pfam_ids_list = []
-                        for each_pfam in pfams_raw.split(","):
-                            if each_pfam in pfam_desc:
-                                pfam_id = pfam_desc[each_pfam]
-                                pfam_ids_list.append(pfam_id)
-                        pfam_ids_list = list(set(pfam_ids_list))
-                        if len(pfam_ids_list) > 0:
-                            pfams = ",".join(pfam_ids_list)
-                        else:
-                            pfams = "-"
-                    else:
-                        if pfams_raw in pfam_desc:
-                            pfams = pfam_desc[pfams_raw]
-                        else:
-                            pfams = "-"
-                else:
-                    pfams = pfams_raw
-                pfam_annot[gene_id] = pfams
+def write_accessory_fasta(csv_file: Path, fasta: Path, rep: str, output: Path) -> int:
+    """Write the FASTA of the accessory genes (mode ``pre``).
 
-    for gene in acc_gff_dict:
-        pan_gene = rev_accesory_genes[gene]
-        if pan_gene in kegg_annot:
-            acc_gff_dict[gene].append(kegg_annot[pan_gene])
-        else:
-            acc_gff_dict[gene].append("-")
-        if pan_gene in cazy_annot:
-            acc_gff_dict[gene].append(cazy_annot[pan_gene])
-        else:
-            acc_gff_dict[gene].append("-")
-        if pan_gene in pfam_annot:
-            acc_gff_dict[gene].append(pfam_annot[pan_gene])
-        else:
-            acc_gff_dict[gene].append("-")
-    return acc_gff_dict
+    :param csv_file: The gene_presence_absence.csv of the species.
+    :param fasta: The pan-genome FASTA of the species.
+    :param rep: The species representative accession.
+    :param output: The output FASTA.
+    :return: The number of accessory genes.
+    :raises ValueError: If an accessory cluster has no sequence in the pan-genome FASTA.
+    """
+    _, rows, rep_index = read_pangenome_csv(csv_file, rep)
+    sequences = read_fasta(fasta)
+    accessory = accessory_rows(rows, rep_index)
+    with open(output, "w") as handle:
+        for row in accessory:
+            if row[0] not in sequences:
+                raise ValueError(f"Cluster {row[0]} has no sequence in {fasta}")
+            handle.write(f">{row[0]}\n{sequences[row[0]].upper()}\n")
+    return len(accessory)
 
 
-def output_writer(gff_dict, rep, clstr_size, core_mgygs):
-    with open(rep + "_clstr.tsv", "w") as file_out:
-        file_out.write("#cluster size = " + str(clstr_size) + "\n")
-        file_out.write(
-            "\t".join(
-                [
-                    "#contig",
-                    "gene_id",
-                    "start",
-                    "end",
-                    "strand",
-                    "kegg",
-                    "cazy",
-                    "pfam",
-                    "core",
-                ]
-            )
-            + "\n"
-        )
-        for gene in gff_dict:
-            if clstr_size == 1:
-                core = "true"
-            else:
-                if gene in core_mgygs:
-                    core = "true"
-                else:
-                    core = "false"
-            file_out.write(
-                "\t".join(
-                    [
-                        gff_dict[gene][0],
-                        gene,
-                        gff_dict[gene][1],
-                        gff_dict[gene][2],
-                        gff_dict[gene][3],
-                        gff_dict[gene][4],
-                        gff_dict[gene][5],
-                        gff_dict[gene][6],
-                        core,
-                    ]
-                )
-                + "\n"
-            )
+def build_profile(
+    rep: str,
+    rep_gff: Path,
+    rep_eggnog: Path,
+    pfam_desc: dict[str, str],
+    csv_file: Path | None = None,
+    prevalence: Path | None = None,
+    gff_dir: Path | None = None,
+    emapper: Path | None = None,
+) -> tuple[int, list[list[str]]]:
+    """Build the functional profile rows of one species (mode ``post``).
+
+    A singleton species needs only the representative files. All its genes are core.
+
+    :param rep: The species representative accession.
+    :param rep_gff: The GFF of the representative.
+    :param rep_eggnog: The eggNOG annotation of the representative.
+    :param pfam_desc: Output of :func:`pfam_parser`.
+    :param csv_file: The gene_presence_absence.csv (pangenome species only).
+    :param prevalence: The CGT ``gene_prevalence_corrected.txt`` (pangenome species only).
+    :param gff_dir: The folder with the member GFF files (pangenome species only).
+    :param emapper: The eggNOG-mapper annotations of the accessory genes. It can be missing
+        when the species has no accessory genes.
+    :return: The cluster size and the output rows.
+    """
+    rep_genes = gff_parser(rep_gff)
+    rep_annotations = eggnog_parser(rep_eggnog, pfam_desc)
+
+    def annotated(locus_tag: str, coordinates: list[str], annotation: tuple[str, str, str], core: bool) -> list[str]:
+        contig, start, end, strand = coordinates
+        return [contig, locus_tag, start, end, strand, *annotation, "true" if core else "false"]
+
+    no_hit = ("-", "-", "-")
+    if csv_file is None:
+        rows = [annotated(tag, coords, rep_annotations.get(tag, no_hit), True) for tag, coords in rep_genes.items()]
+        return 1, rows
+
+    genomes, csv_rows, rep_index = read_pangenome_csv(csv_file, rep)
+    core_clusters = read_core_clusters(prevalence)
+    core_rep_genes = {tag for row in csv_rows if row[0] in core_clusters for tag in split_cell(row[rep_index])}
+    rows = [
+        annotated(tag, coords, rep_annotations.get(tag, no_hit), tag in core_rep_genes)
+        for tag, coords in rep_genes.items()
+    ]
+
+    # One member gene per accessory cluster: the first genome (column order) that has it
+    selected = {}  # cluster -> member locus tag
+    by_genome = defaultdict(set)
+    for row in accessory_rows(csv_rows, rep_index):
+        for genome, cell in zip(genomes, row[CSV_META_COLUMNS:]):
+            tags = split_cell(cell)
+            if tags:
+                selected[row[0]] = tags[0]
+                by_genome[genome].add(tags[0])
+                break
+
+    coordinates = {}
+    for genome in sorted(by_genome):
+        coordinates.update(gff_parser(gff_dir / f"{genome}.gff.gz", by_genome[genome]))
+
+    acc_annotations = eggnog_parser(emapper, pfam_desc) if emapper else {}
+    for cluster, locus_tag in selected.items():
+        if locus_tag not in coordinates:
+            logging.warning("%s: no CDS coordinates for %s (cluster %s)", rep, locus_tag, cluster)
+            continue
+        annotation = acc_annotations.get(cluster, no_hit)
+        rows.append(annotated(locus_tag, coordinates[locus_tag], annotation, cluster in core_clusters))
+    return len(genomes), rows
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="This script find the accessory genes that needs eggNOG annotation. Provide the genomes catalogue metadata file and the url of the ftp site where the catalogue files are located"
-    )
-    parser.add_argument(
-        "--metadata",
-        type=str,
-        help="Catalogue metadata file location",
-        required=True,
-    )
-    parser.add_argument(
-        "--mode",
-        type=str,
-        help="Build profiles mode: pre or post. Option `pre` will generate the fasta files of the accesory genes to run eggNOG. Option `post` will process eggNOG outputs and download and parse the corresponding GFF files",
-        required=True,
-    )
-    parser.add_argument(
-        "--pfam_dat",
-        type=str,
-        help="The Pfam-A.hmm.dat.gz file location",
-        required=True,
-    )
+def write_profile(output: Path, cluster_size: int, rows: list[list[str]]) -> None:
+    """Write the ``<rep>_clstr.tsv`` table.
+
+    :param output: The output file.
+    :param cluster_size: The number of genomes of the species.
+    :param rows: Output of :func:`build_profile`.
+    """
+    with open(output, "w") as handle:
+        handle.write(f"#cluster size = {cluster_size}\n")
+        handle.write("\t".join(OUTPUT_COLUMNS) + "\n")
+        for row in rows:
+            handle.write("\t".join(row) + "\n")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--mode", choices=["pre", "post"], required=True, help="pre: accessory FASTA; post: profile")
+    parser.add_argument("--rep", required=True, help="The species representative accession")
+    parser.add_argument("--csv", type=Path, help="gene_presence_absence.csv(.gz); not used for singletons")
+    parser.add_argument("--fasta", type=Path, help="pan-genome.fna(.gz) (mode pre)")
+    parser.add_argument("--prevalence", type=Path, help="CGT gene_prevalence_corrected.txt(.gz) (mode post)")
+    parser.add_argument("--rep_gff", type=Path, help="GFF of the representative (mode post)")
+    parser.add_argument("--rep_eggnog", type=Path, help="eggNOG annotation of the representative (mode post)")
+    parser.add_argument("--gff_dir", type=Path, help="Folder with the member GFF files (mode post)")
+    parser.add_argument("--emapper", type=Path, help="eggNOG-mapper annotations of the accessory genes (mode post)")
+    parser.add_argument("--pfam_dat", type=Path, help="Pfam-A.hmm.dat.gz (mode post)")
     args = parser.parse_args()
 
-    ### Calling functions
-    (pfam_desc) = pfam_parser(args.pfam_dat)
-    (reps_clusters) = metadata_parser(args.metadata)
-
-    loc_prefix = args.metadata.replace("genomes-all_metadata.tsv", "")
-
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     if args.mode == "pre":
-        accessory_writer(reps_clusters, loc_prefix)
-    elif args.mode == "post":
-        annot_writer(reps_clusters, loc_prefix, pfam_desc)
-    else:
-        exit(
-            "Option "
-            + args.mode
-            + " is not valid. Provide a valid option on the mode argument: `pre` or `post`"
-        )
+        if not (args.csv and args.fasta):
+            parser.error("mode pre needs --csv and --fasta")
+        count = write_accessory_fasta(args.csv, args.fasta, args.rep, Path(f"{args.rep}_accessory.fasta"))
+        logging.info("%s: %d accessory genes", args.rep, count)
+        return
+
+    if not (args.rep_gff and args.rep_eggnog and args.pfam_dat):
+        parser.error("mode post needs --rep_gff, --rep_eggnog and --pfam_dat")
+    if args.csv and not (args.prevalence and args.gff_dir):
+        parser.error("mode post with --csv needs --prevalence and --gff_dir")
+    cluster_size, rows = build_profile(
+        args.rep,
+        args.rep_gff,
+        args.rep_eggnog,
+        pfam_parser(args.pfam_dat),
+        args.csv,
+        args.prevalence,
+        args.gff_dir,
+        args.emapper,
+    )
+    write_profile(Path(f"{args.rep}_clstr.tsv"), cluster_size, rows)
+    logging.info("%s: %d genes in the profile", args.rep, len(rows))
 
 
 if __name__ == "__main__":

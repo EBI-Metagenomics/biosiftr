@@ -21,7 +21,8 @@ include { validateParameters; paramsHelp } from 'plugin/nf-validation'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { BIOSIFTR } from './workflows/biosiftr'
+include { BIOSIFTR        } from './workflows/biosiftr'
+include { BUILD_MGNIFY_DB } from './workflows/build_mgnify_db'
 
 //
 // WORKFLOW: Run main ebi-metagenomics/biosiftr analysis pipeline
@@ -31,7 +32,9 @@ workflow EBIMETAGENOMICS_BIOSIFTR {
     if (params.help) {
         def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
         def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
-        def String command = "nextflow run ${workflow.manifest.name} --input samplesheet.csv --biome <BIOME> -profile docker"
+        def String command = "nextflow run ${workflow.manifest.name} --input samplesheet.csv --biome <BIOME> -profile docker\n" +
+            "  or, to build the databases of a catalogue:\n" +
+            "nextflow run ${workflow.manifest.name} --new_mgnify_db --catalogue_path <CATALOGUE_DIR> --eggnog_db_dir <EGGNOG_DIR> -profile docker"
         log.info logo + paramsHelp(command) + citation + NfcoreTemplate.dashedLine(params.monochrome_logs)
         System.exit(0)
     }
@@ -43,7 +46,11 @@ workflow EBIMETAGENOMICS_BIOSIFTR {
 
     WorkflowMain.initialise(workflow, params, log)
 
-    BIOSIFTR ()
+    if (params.new_mgnify_db) {
+        BUILD_MGNIFY_DB ()
+    } else {
+        BIOSIFTR ()
+    }
 }
 
 /*

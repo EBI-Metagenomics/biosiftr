@@ -1,0 +1,67 @@
+{
+    "Build the databases of a tiny catalogue: 1 singleton, 1 consistent pangenome, 1 pangenome with duplicate gene names": {
+        "content": [
+            23,
+            [
+                "pipeline_info",
+                "test-host-v1-0",
+                "test-host-v1-0/catalogue_fixes",
+                "test-host-v1-0/catalogue_fixes/species_catalogue",
+                "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003",
+                "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301",
+                "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301/pan-genome",
+                "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301/pan-genome/gene_presence_absence.Rtab.gz",
+                "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301/pan-genome/gene_presence_absence.csv.gz",
+                "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301/pan-genome/gene_prevalence_corrected.txt.gz",
+                "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301/pan-genome/pan-genome.fna.gz",
+                "test-host-v1-0/catalogue_fixes/species_catalogue/MGYG0000003/MGYG000000301/pan-genome/renamed_genes.tsv",
+                "test-host-v1-0/functional_profiles_DB",
+                "test-host-v1-0/functional_profiles_DB/MGYG000000101_clstr.tsv",
+                "test-host-v1-0/functional_profiles_DB/MGYG000000201_clstr.tsv",
+                "test-host-v1-0/functional_profiles_DB/MGYG000000301_clstr.tsv",
+                "test-host-v1-0/genomes-all_metadata.tsv",
+                "test-host-v1-0/kegg_completeness_DB",
+                "test-host-v1-0/kegg_completeness_DB/MGYG000000101_clstr_kegg_comp.tsv",
+                "test-host-v1-0/kegg_completeness_DB/MGYG000000201_clstr_kegg_comp.tsv",
+                "test-host-v1-0/kegg_completeness_DB/MGYG000000301_clstr_kegg_comp.tsv",
+                "test-host-v1-0/pangenome_check_report.tsv",
+                "test-host-v1-0/reps_bwamem2",
+                "test-host-v1-0/reps_bwamem2/bwa_reps.fna.0123",
+                "test-host-v1-0/reps_bwamem2/bwa_reps.fna.amb",
+                "test-host-v1-0/reps_bwamem2/bwa_reps.fna.ann",
+                "test-host-v1-0/reps_bwamem2/bwa_reps.fna.bwt.2bit.64",
+                "test-host-v1-0/reps_bwamem2/bwa_reps.fna.pac",
+                "test-host-v1-0/sourmash_species_representatives_k21.sbt.zip",
+                "test-host-v1-0/to_upload",
+                "test-host-v1-0/to_upload/kegg_completeness.tar.gz",
+                "test-host-v1-0/to_upload/pangenome_functional_profiles.tar.gz",
+                "test-host-v1-0/to_upload/reps_bwamem2.tar.gz"
+            ],
+            [
+                "gene_presence_absence.Rtab.gz:md5,e5683b8f800f1840d167499e1b9754ce",
+                "gene_presence_absence.csv.gz:md5,ced6d9f9ca45c2b5d66476b0cf983c7a",
+                "gene_prevalence_corrected.txt.gz:md5,7e27232174b1ac0732dd3887766ac62e",
+                "pan-genome.fna.gz:md5,5ad8c4c159eb009c38c8c10b9a93a32a",
+                "renamed_genes.tsv:md5,80618f19bec2d8213c372f76d499efc8",
+                "MGYG000000101_clstr.tsv:md5,cfd02653ef39fb34db6b30aeb54c98e6",
+                "MGYG000000201_clstr.tsv:md5,f735abd7329c4e8dda05f029a70d4b5b",
+                "MGYG000000301_clstr.tsv:md5,ea47e0729743975a27208bc5e3c8b339",
+                "genomes-all_metadata.tsv:md5,1f1624108f78a5331eb1a3f5d2f24218",
+                "MGYG000000101_clstr_kegg_comp.tsv:md5,fb2c2c6f7db871d877daaed26730cce6",
+                "MGYG000000201_clstr_kegg_comp.tsv:md5,fb2c2c6f7db871d877daaed26730cce6",
+                "MGYG000000301_clstr_kegg_comp.tsv:md5,e0058447320731997756489034edf31a",
+                "pangenome_check_report.tsv:md5,17235a702acf2f52fb69332d24a555fe",
+                "bwa_reps.fna.0123:md5,8220c8779d12024e44dc9968ba5f4f46",
+                "bwa_reps.fna.amb:md5,01f6cface1aa71cc7ca67fc19744be12",
+                "bwa_reps.fna.ann:md5,76e5551338ff8f9cb5988ea92d29a339",
+                "bwa_reps.fna.bwt.2bit.64:md5,d6aaf495d8dfd03030fb85d8b75b7e6e",
+                "bwa_reps.fna.pac:md5,a0c98e42039ee8c95dab39315e9a4be4"
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.3",
+            "nextflow": "25.04.7"
+        },
+        "timestamp": "2026-11-13T09:57:07.576216"
+    }
+}

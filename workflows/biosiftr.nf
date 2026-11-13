@@ -1,4 +1,4 @@
-include { validateParameters ; paramsHelp ; paramsSummaryLog ; fromSamplesheet ; paramsSummaryMap } from 'plugin/nf-validation'
+include { paramsHelp ; paramsSummaryLog ; fromSamplesheet ; paramsSummaryMap } from 'plugin/nf-validation'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,8 +63,6 @@ workflow BIOSIFTR {
     def multiqc_report = []
 
     def summary_params = paramsSummaryMap(workflow)
-
-    validateParameters()
 
     log.info(paramsSummaryLog(workflow))
 

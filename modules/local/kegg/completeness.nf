@@ -2,7 +2,9 @@ process KEGG_COMPLETENESS {
     tag "$meta.id"
     label 'process_single'
 
-    container 'quay.io/microbiome-informatics/kegg-completeness:v1.1'
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/kegg-pathways-completeness:1.4.4--pyhdfd78af_0':
+        'biocontainers/kegg-pathways-completeness:1.4.4--pyhdfd78af_0' }"
 
     input:
     tuple val(meta), path(kos_table)
@@ -17,40 +19,44 @@ process KEGG_COMPLETENESS {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.1' // WARN: The tool have no option to print the version. This is the container version
     """
     echo "creating kos.list file"
-    cat ${kos_table} | awk 'NR>1' | cut -f1 | tr "\\n" "," > kos.list
+    # No trailing comma: kegg-pathways-completeness 1.4.4 counts an empty entry as a KO
+    awk 'NR>1' ${kos_table} | cut -f1 | grep -v -x '' | paste -sd, - > kos.list
 
     echo "Running KEGG completeness for the community"
-    run_pathways.sh \\
-        -l kos.list \\
-        -o result
+    if [ -s kos.list ]; then
+        give_completeness \\
+            -l kos.list \\
+            -r result
+    else
+        # The tool reports a module for an empty list, so an empty list gives an empty table
+        printf "module_accession\\tcompleteness\\tpathway_name\\n" > result_pathways.tsv
+    fi
 
     echo "Formatting output"
     awk -v prefix=${prefix} \\
         -v tool=${tool} \\
         -F'\\t' \\
         'NR==1 {print "module\\t" prefix "_" tool; next} {print \$1 "|" \$3 "\\t" \$2}' \\
-        result.summary.kegg_pathways.tsv > ${prefix}_${tool}_community_kegg_modules_comp.tsv
+        result_pathways.tsv > ${prefix}_${tool}_community_kegg_modules_comp.tsv
 
     echo "Reformatted output done"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        kegg-pathways-completeness: $VERSION
+        kegg-pathways-completeness: \$(give_completeness --version | cut -d' ' -f3)
     END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def VERSION = '1.1'
     """
     touch ${prefix}_${tool}_community_kegg_modules_comp.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        kegg-pathways-completeness: $VERSION
+        kegg-pathways-completeness: \$(give_completeness --version | cut -d' ' -f3)
     END_VERSIONS
     """
 }

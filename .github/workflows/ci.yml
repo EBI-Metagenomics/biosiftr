@@ -39,3 +39,20 @@ jobs:
       - name: Run the nf-test
         run: |
           nf-test test --ci --profile test,docker
+
+  python_tests:
+    name: Run the unit tests of the bin/ scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pipeline code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5
+        with:
+          python-version: "3.12"
+
+      - name: Run pytest
+        run: |
+          python -m pip install pytest
+          python -m pytest tests/python

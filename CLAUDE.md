@@ -40,6 +40,15 @@ whose _content_ is volatile and excluded from content snapshots (only their name
 The pipeline entrypoint chain is `main.nf` → `workflows/biosiftr.nf` (the `BIOSIFTR` workflow).
 `workflows/biosiftr.nf` is the orchestration hub; almost all logic lives there.
 
+With `--new_mgnify_db`, `main.nf` runs `workflows/build_mgnify_db.nf` (`BUILD_MGNIFY_DB`) instead. It
+builds the per-biome databases from an MGnify catalogue folder (`--catalogue_path`, `--eggnog_db_dir`)
+into `<outdir>/<catalogue_id>/`, using the same layout that `DOWNLOAD_REFERENCES` reads. It first
+checks each pangenome (`bin/pangenome_fix.py`) and corrects species with duplicate cluster names
+(old mmseqs catalogues), then runs CGT, eggNOG-mapper on accessory genes
+(`bin/pangenomeDB_builder_codon.py`), KEGG completeness, sourmash and bwa-mem2 indexes. Test:
+`tests/build_mgnify_db.nf.test` (fixture made by `tests/mgnify_catalogue/make_fixture.py`).
+Python unit tests for `bin/` are in `tests/python/` (`python -m pytest tests/python`).
+
 Conceptual stages (all driven from `BIOSIFTR`):
 
 1. **Preprocessing** (skippable via `--skip_decont`): `FASTP` trim → `BWAMEM2DECONTNOBAMS`

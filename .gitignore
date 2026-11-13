@@ -10,3 +10,6 @@ testing*
 results/
 indexes/
 dbs/
+
+# Agent files (reports, drafts)
+.mi/

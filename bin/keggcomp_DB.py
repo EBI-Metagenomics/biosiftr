@@ -46,7 +46,7 @@ def pan_parser(all_modules, pan_table):
             module_name = module_accession + "|" + pathway_name
             all_modules.append(module_name)
             pan_values[module_name] = completeness
-    all_modules = list(set(all_modules))
+    all_modules = sorted(set(all_modules))
     return (all_modules, pan_values)
 
 
@@ -85,14 +85,14 @@ def main():
     parser.add_argument(
         "--core",
         type=str,
-        help="Pathways completeness table at core level (*_core.summary.kegg_pathways.tsv)",
-        required=True,
+        help="Pathways completeness table at core level (*_core_pathways.tsv). Leave out if the core has no KOs",
+        default=None,
     )
     parser.add_argument(
         "--pan",
         type=str,
-        help="Pathways completeness table at pangenome level (*_pan.summary.kegg_pathways.tsv)",
-        required=True,
+        help="Pathways completeness table at pangenome level (*_pan_pathways.tsv). Leave out if the pangenome has no KOs",
+        default=None,
     )
     parser.add_argument(
         "--output",
@@ -103,8 +103,9 @@ def main():
     args = parser.parse_args()
 
     ### Calling functions
-    (all_modules, core_values) = core_parser(args.core)
-    (all_modules, pan_values) = pan_parser(all_modules, args.pan)
+    # A species without KOs has no completeness table; all its modules are then 0
+    (all_modules, core_values) = core_parser(args.core) if args.core else ([], {})
+    (all_modules, pan_values) = pan_parser(all_modules, args.pan) if args.pan else (all_modules, {})
     output_writer(all_modules, core_values, pan_values, args.output)
 
 
