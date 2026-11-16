@@ -83,25 +83,51 @@ def pfam_parser(pfam_dat: Path) -> dict[str, str]:
     return pfam_desc
 
 
-def read_pangenome_csv(path: Path, rep: str) -> tuple[list[str], list[list[str]], int]:
-    """Read the gene_presence_absence.csv of a species.
+def read_pangenome_csv(path: Path, rep: str) -> tuple[list[str], list[tuple[str, list[str], tuple[str, str] | None]]]:
+    """Read the gene_presence_absence.csv of a species one row at a time.
+
+    The genome cells are not kept, because a large species has millions of them.
 
     :param path: The CSV file. It can be compressed (``.gz``).
     :param rep: The species representative accession.
-    :return: The genome columns, the rows, and the column index of the representative.
+    :return: The genome columns, and one (cluster, representative locus tags, first member) tuple
+        for each row. The first member is the (genome, locus tag) of the first genome column that
+        has the cluster. It is set only for the accessory clusters (absent from the representative).
     :raises ValueError: If the representative is not a column of the CSV, or the names are not unique.
     """
     csv.field_size_limit(sys.maxsize)
+    clusters = []
+    names = set()
     with open_text(path) as handle:
         reader = csv.reader(handle)
         header = next(reader)
-        rows = list(reader)
-    if rep not in header:
-        raise ValueError(f"{rep} is not a genome column of {path}")
-    names = [row[0] for row in rows]
-    if len(set(names)) != len(names):
-        raise ValueError(f"{path} has duplicate gene names. Correct the pangenome files first (pangenome_fix.py)")
-    return header[CSV_META_COLUMNS:], rows, header.index(rep)
+        if rep not in header:
+            raise ValueError(f"{rep} is not a genome column of {path}")
+        rep_index = header.index(rep)
+        genomes = header[CSV_META_COLUMNS:]
+        for row in reader:
+            if row[0] in names:
+                raise ValueError(
+                    f"{path} has duplicate gene names. Correct the pangenome files first (pangenome_fix.py)"
+                )
+            names.add(row[0])
+            rep_tags = split_cell(row[rep_index])
+            clusters.append((row[0], rep_tags, None if rep_tags else first_member(genomes, row)))
+    return genomes, clusters
+
+
+def first_member(genomes: list[str], row: list[str]) -> tuple[str, str] | None:
+    """Get the first member gene of a cluster (column order).
+
+    :param genomes: The genome columns of the CSV.
+    :param row: The CSV row of the cluster.
+    :return: The (genome, locus tag) of the first genome that has the cluster, or ``None``.
+    """
+    for genome, cell in zip(genomes, row[CSV_META_COLUMNS:]):
+        tags = split_cell(cell)
+        if tags:
+            return genome, tags[0]
+    return None
 
 
 def read_core_clusters(prevalence: Path) -> set[str]:
@@ -121,10 +147,11 @@ def read_core_clusters(prevalence: Path) -> set[str]:
     return core
 
 
-def read_fasta(path: Path) -> dict[str, str]:
+def read_fasta(path: Path, wanted: set[str] | None = None) -> dict[str, str]:
     """Read a FASTA file.
 
     :param path: The FASTA file. It can be compressed (``.gz``).
+    :param wanted: Keep only these records. Keep all records if it is ``None``.
     :return: {name: sequence}. The name is the first word of the header.
     """
     sequences = {}
@@ -136,7 +163,9 @@ def read_fasta(path: Path) -> dict[str, str]:
                 if name is not None:
                     sequences[name] = "".join(chunks)
                 name, chunks = line[1:].split()[0], []
-            elif line:
+                if wanted is not None and name not in wanted:
+                    name = None  # skip the sequence lines of this record
+            elif line and name is not None:
                 chunks.append(line)
     if name is not None:
         sequences[name] = "".join(chunks)
@@ -194,16 +223,6 @@ def eggnog_parser(eggnog: Path, pfam_desc: dict[str, str]) -> dict[str, tuple[st
     return annotations
 
 
-def accessory_rows(rows: list[list[str]], rep_index: int) -> list[list[str]]:
-    """Get the CSV rows of the clusters that are absent from the representative.
-
-    :param rows: The CSV rows.
-    :param rep_index: The column index of the representative.
-    :return: The accessory rows.
-    """
-    return [row for row in rows if not split_cell(row[rep_index])]
-
-
 def write_accessory_fasta(csv_file: Path, fasta: Path, rep: str, output: Path) -> int:
     """Write the FASTA of the accessory genes (mode ``pre``).
 
@@ -214,14 +233,14 @@ def write_accessory_fasta(csv_file: Path, fasta: Path, rep: str, output: Path) -
     :return: The number of accessory genes.
     :raises ValueError: If an accessory cluster has no sequence in the pan-genome FASTA.
     """
-    _, rows, rep_index = read_pangenome_csv(csv_file, rep)
-    sequences = read_fasta(fasta)
-    accessory = accessory_rows(rows, rep_index)
+    _, clusters = read_pangenome_csv(csv_file, rep)
+    accessory = [cluster for cluster, rep_tags, _ in clusters if not rep_tags]
+    sequences = read_fasta(fasta, set(accessory))
     with open(output, "w") as handle:
-        for row in accessory:
-            if row[0] not in sequences:
-                raise ValueError(f"Cluster {row[0]} has no sequence in {fasta}")
-            handle.write(f">{row[0]}\n{sequences[row[0]].upper()}\n")
+        for cluster in accessory:
+            if cluster not in sequences:
+                raise ValueError(f"Cluster {cluster} has no sequence in {fasta}")
+            handle.write(f">{cluster}\n{sequences[cluster].upper()}\n")
     return len(accessory)
 
 
@@ -262,9 +281,9 @@ def build_profile(
         rows = [annotated(tag, coords, rep_annotations.get(tag, no_hit), True) for tag, coords in rep_genes.items()]
         return 1, rows
 
-    genomes, csv_rows, rep_index = read_pangenome_csv(csv_file, rep)
+    genomes, clusters = read_pangenome_csv(csv_file, rep)
     core_clusters = read_core_clusters(prevalence)
-    core_rep_genes = {tag for row in csv_rows if row[0] in core_clusters for tag in split_cell(row[rep_index])}
+    core_rep_genes = {tag for cluster, rep_tags, _ in clusters if cluster in core_clusters for tag in rep_tags}
     rows = [
         annotated(tag, coords, rep_annotations.get(tag, no_hit), tag in core_rep_genes)
         for tag, coords in rep_genes.items()
@@ -273,13 +292,11 @@ def build_profile(
     # One member gene per accessory cluster: the first genome (column order) that has it
     selected = {}  # cluster -> member locus tag
     by_genome = defaultdict(set)
-    for row in accessory_rows(csv_rows, rep_index):
-        for genome, cell in zip(genomes, row[CSV_META_COLUMNS:]):
-            tags = split_cell(cell)
-            if tags:
-                selected[row[0]] = tags[0]
-                by_genome[genome].add(tags[0])
-                break
+    for cluster, _, member in clusters:
+        if member is not None:
+            genome, locus_tag = member
+            selected[cluster] = locus_tag
+            by_genome[genome].add(locus_tag)
 
     coordinates = {}
     for genome in sorted(by_genome):
