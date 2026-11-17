@@ -26,7 +26,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "bin"))
 from pangenomeDB_builder_codon import (  # noqa: E402
     build_profile,
     pfam_parser,
-    read_fasta,
     write_accessory_fasta,
     write_profile,
 )
@@ -38,13 +37,19 @@ REP_GFF = (
     "c1\tProkka\tCDS\t301\t600\t.\t-\t0\tID=R1_00002;gene=b\n"
     "##FASTA\n>c1\nACGT\n"
 )
+# Member contig: CDS M2_00002 (100-190, minus) and M2_00004 (300-390, plus). Each CDS is
+# 91 bp: start codon, 28 codons, stop codon and one extra base (partial codon).
+CDS_C = "ATG" + "GGG" * 28 + "TAA" + "A"
+CDS_D = "ATG" + "TTT" * 28 + "TAA" + "A"
+COMPLEMENT = str.maketrans("ACGT", "TGCA")
+MEMBER_CONTIG = "N" * 99 + CDS_C.translate(COMPLEMENT)[::-1] + "N" * 109 + CDS_D
 MEMBER_GFF = (
     "##gff-version 3\n"
     "m1\tProkka\tCDS\t1\t90\t.\t+\t0\tID=M2_00001\n"
     "m1\tProkka\tCDS\t100\t190\t.\t-\t0\tID=M2_00002\n"
     "m1\tProkka\tCDS\t200\t290\t.\t+\t0\tID=M2_00003\n"
     "m1\tProkka\tCDS\t300\t390\t.\t+\t0\tID=M2_00004\n"
-    "##FASTA\n>m1\nACGT\n"
+    f"##FASTA\n>m0\nACGT\n>m1\n{MEMBER_CONTIG[:200]}\n{MEMBER_CONTIG[200:]}\n"
 )
 # Cluster c has two paralogs in M2, joined with a TAB as in old mmseqs CSV files.
 CSV = (
@@ -55,7 +60,6 @@ CSV = (
     "d,,x,,M2_00004\n"
 )
 PREVALENCE = "# Core threshold: >= 2 observations\ngene\tcount\tlabel\na\t2\tcore\nb\t1\trare\nc\t1\trare\nd\t1\tcore\n"
-FASTA = ">a\nATGAAA\n>b\nATGCCC\n>c\natgggg\n>d\nATGTTT\n"
 PFAM_DAT = "# STOCKHOLM 1.0\n#=GF ID   Glyco_hydro_1\n#=GF AC   PF00232.21\n//\n"
 
 
@@ -86,7 +90,6 @@ def species(tmp_path: Path) -> dict[str, Path]:
     gff_dir.mkdir()
     files = {
         "csv": tmp_path / "gene_presence_absence.csv.gz",
-        "fasta": tmp_path / "pan-genome.fna.gz",
         "prevalence": tmp_path / "gene_prevalence_corrected.txt.gz",
         "rep_gff": tmp_path / "R1.gff",
         "rep_eggnog": tmp_path / "R1_eggNOG.tsv",
@@ -95,7 +98,6 @@ def species(tmp_path: Path) -> dict[str, Path]:
         "gff_dir": gff_dir,
     }
     write_gz(files["csv"], CSV)
-    write_gz(files["fasta"], FASTA)
     write_gz(files["prevalence"], PREVALENCE)
     files["rep_gff"].write_text(REP_GFF)
     files["rep_eggnog"].write_text(REP_EGGNOG)
@@ -105,16 +107,23 @@ def species(tmp_path: Path) -> dict[str, Path]:
     return files
 
 
-def test_pre_writes_only_accessory_clusters(species: dict[str, Path], tmp_path: Path) -> None:
+def test_pre_writes_accessory_proteins(species: dict[str, Path], tmp_path: Path) -> None:
     output = tmp_path / "R1_accessory.fasta"
-    assert write_accessory_fasta(species["csv"], species["fasta"], REP, output) == 2
-    assert read_fasta(output) == {"c": "ATGGGG", "d": "ATGTTT"}
+    assert write_accessory_fasta(species["csv"], species["gff_dir"], REP, output) == 2
+    assert output.read_text() == f">c\nM{'G' * 28}\n>d\nM{'F' * 28}\n"
+
+
+def test_pre_skips_genes_without_cds(species: dict[str, Path], tmp_path: Path) -> None:
+    write_gz(species["gff_dir"] / "M2.gff.gz", MEMBER_GFF.replace("ID=M2_00004", "ID=other"))
+    output = tmp_path / "R1_accessory.fasta"
+    assert write_accessory_fasta(species["csv"], species["gff_dir"], REP, output) == 1
+    assert output.read_text().startswith(">c\n")
 
 
 def test_pre_fails_on_duplicate_names(species: dict[str, Path], tmp_path: Path) -> None:
     write_gz(species["csv"], CSV.replace("d,,x", "c,,x"))
     with pytest.raises(ValueError):
-        write_accessory_fasta(species["csv"], species["fasta"], REP, tmp_path / "out.fasta")
+        write_accessory_fasta(species["csv"], species["gff_dir"], REP, tmp_path / "out.fasta")
 
 
 def test_post_pangenome_species(species: dict[str, Path]) -> None:

@@ -15,8 +15,9 @@
 
 """Build the BioSIFTR functional profile table of one MGnify species.
 
-Mode ``pre`` writes the FASTA of the accessory genes (pangenome clusters that are absent
-from the species representative). These genes need an eggNOG annotation.
+Mode ``pre`` writes the protein FASTA of the accessory genes (pangenome clusters that are
+absent from the species representative). These genes need an eggNOG annotation. Each cluster
+is the protein of one member gene, translated from the CDS in the member GFF.
 
 Mode ``post`` writes ``<rep>_clstr.tsv``: the genes of the representative with their
 eggNOG annotation, plus one member gene for each accessory cluster with the eggNOG
@@ -34,8 +35,11 @@ from collections import defaultdict
 from pathlib import Path
 from typing import IO
 
+from Bio.Seq import Seq
+
 CSV_META_COLUMNS = 3  # Gene, Non-unique Gene name, Annotation
 EVALUE_THRESHOLD = 1e-10
+TRANSLATION_TABLE = 11  # bacterial and archaeal code (Prokka)
 OUTPUT_COLUMNS = ["#contig", "gene_id", "start", "end", "strand", "kegg", "cazy", "pfam", "core"]
 
 
@@ -147,31 +151,6 @@ def read_core_clusters(prevalence: Path) -> set[str]:
     return core
 
 
-def read_fasta(path: Path, wanted: set[str] | None = None) -> dict[str, str]:
-    """Read a FASTA file.
-
-    :param path: The FASTA file. It can be compressed (``.gz``).
-    :param wanted: Keep only these records. Keep all records if it is ``None``.
-    :return: {name: sequence}. The name is the first word of the header.
-    """
-    sequences = {}
-    name, chunks = None, []
-    with open_text(path) as handle:
-        for line in handle:
-            line = line.strip()
-            if line.startswith(">"):
-                if name is not None:
-                    sequences[name] = "".join(chunks)
-                name, chunks = line[1:].split()[0], []
-                if wanted is not None and name not in wanted:
-                    name = None  # skip the sequence lines of this record
-            elif line and name is not None:
-                chunks.append(line)
-    if name is not None:
-        sequences[name] = "".join(chunks)
-    return sequences
-
-
 def gff_parser(gff: Path, wanted: set[str] | None = None) -> dict[str, list[str]]:
     """Read the CDS coordinates of a GFF file.
 
@@ -223,25 +202,84 @@ def eggnog_parser(eggnog: Path, pfam_desc: dict[str, str]) -> dict[str, tuple[st
     return annotations
 
 
-def write_accessory_fasta(csv_file: Path, fasta: Path, rep: str, output: Path) -> int:
-    """Write the FASTA of the accessory genes (mode ``pre``).
+def gff_contigs(gff: Path, wanted: set[str]) -> dict[str, str]:
+    """Read the contig sequences of the ``##FASTA`` section of a GFF file.
+
+    :param gff: The GFF file. It can be compressed (``.gz``).
+    :param wanted: Keep only these contigs.
+    :return: {contig: sequence}.
+    """
+    sequences = {}
+    name, chunks = None, []
+    with open_text(gff) as handle:
+        for line in handle:
+            if line.startswith("##FASTA"):
+                break
+        for line in handle:
+            line = line.strip()
+            if line.startswith(">"):
+                if name is not None:
+                    sequences[name] = "".join(chunks)
+                name, chunks = line[1:].split()[0], []
+                if name not in wanted:
+                    name = None  # skip the sequence lines of this record
+            elif line and name is not None:
+                chunks.append(line)
+    if name is not None:
+        sequences[name] = "".join(chunks)
+    return sequences
+
+
+def cds_protein(contig: str, start: str, end: str, strand: str) -> str:
+    """Translate one CDS.
+
+    :param contig: The contig sequence.
+    :param start: The CDS start (1-based, GFF).
+    :param end: The CDS end (1-based, inclusive, GFF).
+    :param strand: ``1`` or ``-1``.
+    :return: The protein sequence, without the final stop codon.
+    """
+    cds = Seq(contig[int(start) - 1 : int(end)].upper())
+    if strand == "-1":
+        cds = cds.reverse_complement()
+    cds = cds[: len(cds) - len(cds) % 3]  # partial genes at the contig edges
+    return str(cds.translate(table=TRANSLATION_TABLE)).rstrip("*")
+
+
+def write_accessory_fasta(csv_file: Path, gff_dir: Path, rep: str, output: Path) -> int:
+    """Write the protein FASTA of the accessory genes (mode ``pre``).
+
+    Each accessory cluster gets the protein of its first member gene (column order). Mode
+    ``post`` uses the same member gene.
 
     :param csv_file: The gene_presence_absence.csv of the species.
-    :param fasta: The pan-genome FASTA of the species.
+    :param gff_dir: The folder with the member GFF files. The GFF files must have the contigs.
     :param rep: The species representative accession.
     :param output: The output FASTA.
-    :return: The number of accessory genes.
-    :raises ValueError: If an accessory cluster has no sequence in the pan-genome FASTA.
+    :return: The number of accessory genes in the FASTA.
     """
     _, clusters = read_pangenome_csv(csv_file, rep)
-    accessory = [cluster for cluster, rep_tags, _ in clusters if not rep_tags]
-    sequences = read_fasta(fasta, set(accessory))
+    by_genome = defaultdict(dict)  # genome -> {locus tag: cluster}
+    for cluster, _, member in clusters:
+        if member is not None:
+            genome, locus_tag = member
+            by_genome[genome][locus_tag] = cluster
+
+    count = 0
     with open(output, "w") as handle:
-        for cluster in accessory:
-            if cluster not in sequences:
-                raise ValueError(f"Cluster {cluster} has no sequence in {fasta}")
-            handle.write(f">{cluster}\n{sequences[cluster].upper()}\n")
-    return len(accessory)
+        for genome in sorted(by_genome):
+            gff = gff_dir / f"{genome}.gff.gz"
+            members = by_genome[genome]
+            coordinates = gff_parser(gff, set(members))
+            contigs = gff_contigs(gff, {coords[0] for coords in coordinates.values()})
+            for locus_tag, cluster in members.items():
+                coords = coordinates.get(locus_tag)
+                if coords is None or coords[0] not in contigs:
+                    logging.warning("%s: no CDS sequence for %s (cluster %s)", rep, locus_tag, cluster)
+                    continue
+                handle.write(f">{cluster}\n{cds_protein(contigs[coords[0]], *coords[1:])}\n")
+                count += 1
+    return count
 
 
 def build_profile(
@@ -331,20 +369,19 @@ def main() -> None:
     parser.add_argument("--mode", choices=["pre", "post"], required=True, help="pre: accessory FASTA; post: profile")
     parser.add_argument("--rep", required=True, help="The species representative accession")
     parser.add_argument("--csv", type=Path, help="gene_presence_absence.csv(.gz); not used for singletons")
-    parser.add_argument("--fasta", type=Path, help="pan-genome.fna(.gz) (mode pre)")
     parser.add_argument("--prevalence", type=Path, help="CGT gene_prevalence_corrected.txt(.gz) (mode post)")
     parser.add_argument("--rep_gff", type=Path, help="GFF of the representative (mode post)")
     parser.add_argument("--rep_eggnog", type=Path, help="eggNOG annotation of the representative (mode post)")
-    parser.add_argument("--gff_dir", type=Path, help="Folder with the member GFF files (mode post)")
+    parser.add_argument("--gff_dir", type=Path, help="Folder with the member GFF files")
     parser.add_argument("--emapper", type=Path, help="eggNOG-mapper annotations of the accessory genes (mode post)")
     parser.add_argument("--pfam_dat", type=Path, help="Pfam-A.hmm.dat.gz (mode post)")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     if args.mode == "pre":
-        if not (args.csv and args.fasta):
-            parser.error("mode pre needs --csv and --fasta")
-        count = write_accessory_fasta(args.csv, args.fasta, args.rep, Path(f"{args.rep}_accessory.fasta"))
+        if not (args.csv and args.gff_dir):
+            parser.error("mode pre needs --csv and --gff_dir")
+        count = write_accessory_fasta(args.csv, args.gff_dir, args.rep, Path(f"{args.rep}_accessory.fasta"))
         logging.info("%s: %d accessory genes", args.rep, count)
         return
 

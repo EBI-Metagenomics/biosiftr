@@ -148,7 +148,9 @@ workflow BUILD_MGNIFY_DB {
     /*
         Stage B: functional profiles
     */
-    PANGENOME_ACCESSORY(ch_pangenome_files.map { meta, files -> [meta, files[0], files[2]] })
+    ch_gff_dirs = ch_pangenome_dirs.map { meta, _pangenome_dir, gff_dir -> [meta, gff_dir] }
+
+    PANGENOME_ACCESSORY(ch_pangenome_files.join(ch_gff_dirs).map { meta, files, gff_dir -> [meta, files[0], gff_dir] })
     ch_versions = ch_versions.mix(PANGENOME_ACCESSORY.out.versions.first())
 
     EGGNOGMAPPER(
@@ -165,7 +167,7 @@ workflow BUILD_MGNIFY_DB {
     ch_profile_pangenome = ch_rep_files
         .filter { meta, _gff, _eggnog -> !meta.single }
         .join(ch_pangenome_files)
-        .join(ch_pangenome_dirs.map { meta, _pangenome_dir, gff_dir -> [meta, gff_dir] })
+        .join(ch_gff_dirs)
         .join(EGGNOGMAPPER.out.annotations, remainder: true)
         .map { meta, gff, eggnog, files, gff_dir, emapper -> [meta, gff, eggnog, files[0], files[3], gff_dir, emapper ?: []] }
 

@@ -7,7 +7,7 @@ process PANGENOME_ACCESSORY {
         'quay.io/biocontainers/biopython:1.81' }"
 
     input:
-    tuple val(meta), path(csv), path(fasta)
+    tuple val(meta), path(csv), path(gff_dir)
 
     output:
     tuple val(meta), path("${meta.id}_accessory.fasta"), emit: fasta
@@ -22,7 +22,7 @@ process PANGENOME_ACCESSORY {
         --mode pre \\
         --rep ${meta.id} \\
         --csv ${csv} \\
-        --fasta ${fasta}
+        --gff_dir ${gff_dir}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
